@@ -23,8 +23,11 @@ export const registerUser = async (
 
   const token = generateToken(user._id.toString());
 
+  const userObject = user.toObject();
+  const { password: _, ...userWithoutPassword } = userObject;
+
   return {
-    user,
+    user: userWithoutPassword,
     token,
   };
 };
@@ -34,7 +37,7 @@ export const loginUser = async (
   password: string
 ) => {
   // Find user
-  const user = await User.findOne({ email }).select("-password");
+  const user = await User.findOne({ email }).select("+password");
 
   if (!user) {
     throw new Error("Invalid email or password");
@@ -50,8 +53,12 @@ export const loginUser = async (
   // Generate JWT
   const token = generateToken(user._id.toString());
 
+  const userObject = user.toObject();
+
+  const { password: _, ...userWithoutPassword } = userObject;
+
   return {
-    user,
+    user: userWithoutPassword,
     token,
   };
 };
