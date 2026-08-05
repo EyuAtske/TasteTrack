@@ -5,8 +5,8 @@ import userRoutes from "./routes/user.routes";
 
 //  Imported routes from restaurant and review modules
 
-import restaurantRoutes from './modules/restaurant/restaurant.routes';
-import reviewRoutes from './modules/review/review.routes'
+import restaurantRoutes from './routes/restaurant.routes';
+import reviewRoutes from './routes/review.routes'
 
 const app = express();
 

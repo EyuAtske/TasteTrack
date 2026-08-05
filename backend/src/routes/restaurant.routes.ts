@@ -5,13 +5,13 @@ import {
     createRestaurant,
     updateRestaurant,
     deleteRestaurant
-} from './restaurant.controller';
+} from '../controllers/restaurant.controller';
 
 const router = Router();
 
 router.route('/')
     .get(getRestaurants)
-    .post(createRestaurant); // Note: Member 1 will add Admin Auth middleware here later
+    .post(createRestaurant);
 
 router.route('/:id')
     .get(getRestaurantById)
