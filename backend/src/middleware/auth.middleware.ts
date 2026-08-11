@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model";
+import { IUser } from "../models/user.model";
 
 interface AuthRequest extends Request {
-  user?: any;
+  user?: IUser;
 }
 
 export const protect = async (
@@ -46,4 +47,19 @@ export const protect = async (
       message: "Invalid token",
     });
   }
+};
+
+export const admin = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Admin access required",
+    });
+  }
+
+  next();
 };
