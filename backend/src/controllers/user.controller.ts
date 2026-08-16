@@ -1,9 +1,13 @@
-import { Request, Response } from "express";
-import { getProfile } from "../services/user.service";
-import { updateProfile, updatePassword  } from "../services/user.service";
+import { Response } from "express";
+import { AuthRequest } from "../middleware/auth.middleware";
+import {
+    getProfile,
+    updateProfile,
+    updatePassword
+} from "../services/user.service";
 
 export const getUserProfile = async (
-    req: Request,
+    req: AuthRequest,
     res: Response
 ) => {
     try {
@@ -18,7 +22,7 @@ export const getUserProfile = async (
 };
 
 export const updateUserProfile = async (
-    req: Request,
+    req: AuthRequest,
     res: Response
 ) => {
     try {
@@ -39,25 +43,25 @@ export const updateUserProfile = async (
 };
 
 export const updateUserPassword = async (
-  req: Request,
-  res: Response
+    req: AuthRequest,
+    res: Response
 ) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
+    try {
+        const { currentPassword, newPassword } = req.body;
 
-    await updatePassword(req.user!._id.toString(), {
-      currentPassword,
-      newPassword,
-    });
+        await updatePassword(req.user!._id.toString(), {
+            currentPassword,
+            newPassword,
+        });
 
-    res.status(200).json({
-      success: true,
-      message: "Password updated successfully",
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
+        res.status(200).json({
+            success: true,
+            message: "Password updated successfully",
+        });
+    } catch (error: any) {
+        res.status(400).json({
+            success: false,
+            message: error.message,
+        });
+    }
 };

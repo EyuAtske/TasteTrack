@@ -6,18 +6,18 @@ import {
     updateRestaurant,
     deleteRestaurant
 } from '../controllers/restaurant.controller';
-
-import { protect, admin } from "../middleware/auth.middleware";
+import { protect, admin } from '../middleware/auth.middleware';
+import { uploadRestaurantImages } from '../middleware/upload.middleware';
 
 const router = Router();
 
 router.route('/')
     .get(getRestaurants)
-    .post(protect, admin, createRestaurant);
+    .post(protect, admin, uploadRestaurantImages.array('images', 5), createRestaurant);
 
 router.route('/:id')
     .get(getRestaurantById)
-    .put(protect, admin, updateRestaurant)
+    .put(protect, admin, uploadRestaurantImages.array('images', 5), updateRestaurant)
     .delete(protect, admin, deleteRestaurant);
 
 export default router;
