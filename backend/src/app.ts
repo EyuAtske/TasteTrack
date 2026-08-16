@@ -5,6 +5,8 @@ import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
 
 //  Imported routes from restaurant and review modules
+// admin token 
+// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhODFkYWE4Y2MyNjZlOGY0OGUwM2MyNSIsImlhdCI6MTc4Njg5NTAxNiwiZXhwIjoxNzg3NDk5ODE2fQ.F2Lz9fnHRP71Dr85kHMu9If7R6zeKubgdOwGzoI12Cg
 import restaurantRoutes from './routes/restaurant.routes';
 import reviewRoutes from './routes/review.routes'
 

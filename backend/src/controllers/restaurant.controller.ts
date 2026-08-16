@@ -52,6 +52,7 @@ export const getRestaurantById = async (req: Request, res: Response, next: NextF
 // Handles uploaded images
 export const createRestaurant = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        console.log("BODY:", req.body);
         const uploadedImages = buildImageUrls(req);
         const restaurant = await Restaurant.create({
             ...req.body,
