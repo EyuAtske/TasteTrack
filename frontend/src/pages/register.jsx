@@ -78,7 +78,7 @@ export default function Register({ onNavigateToLogin, onRegisterSuccess }) {
           <Input
             id="register-name"
             label="Full Name"
-            placeholder="e.g. Alex Morgan"
+            
             value={name}
             onChange={(e) => {
               setName(e.target.value);
