@@ -6,6 +6,10 @@ import {
     updateRestaurant,
     deleteRestaurant
 } from '../controllers/restaurant.controller';
+
+
+import { getRestaurantReviews } from '../controllers/review.controller'; 
+
 import { protect, admin } from '../middleware/auth.middleware';
 import { uploadRestaurantImages } from '../middleware/upload.middleware';
 
@@ -19,5 +23,7 @@ router.route('/:id')
     .get(getRestaurantById)
     .put(protect, admin, uploadRestaurantImages.array('images', 5), updateRestaurant)
     .delete(protect, admin, deleteRestaurant);
+
+router.get('/:id/reviews', getRestaurantReviews);
 
 export default router;

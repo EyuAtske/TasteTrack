@@ -14,6 +14,8 @@ export interface IRestaurant extends Document {
     averageRating: number;
     latitude: number;
     longitude: number;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 // Create the Schema

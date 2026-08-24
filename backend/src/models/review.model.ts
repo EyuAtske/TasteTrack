@@ -6,6 +6,8 @@ export interface IReview extends Document {
     rating: number;
     title: string;
     comment: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const ReviewSchema: Schema = new Schema(
