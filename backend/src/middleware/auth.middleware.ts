@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model";
 import { IUser } from "../models/user.model";
+import { env } from "../config/env";
 
 export interface AuthRequest extends Request {
   user?: IUser;
@@ -26,7 +27,7 @@ export const protect = async (
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET as string
+      env.JWT_SECRET as string
     ) as { id: string };
 
     const user = await User.findById(decoded.id);
