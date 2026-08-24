@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
 import mongoose from 'mongoose';
 import User from '../models/user.model';
 import Restaurant from '../models/restaurant.model';
@@ -10,7 +11,7 @@ export const getFavorites = async (
     next: NextFunction
 ) => {
     try {
-        const userId = (req as any).user.id;
+        const userId = req.user!._id.toString();
 
         const user = await User.findById(userId).populate(
             'favorites',
@@ -41,7 +42,7 @@ export const addFavorite = async (
     next: NextFunction
 ) => {
     try {
-        const userId = (req as any).user.id;
+        const userId = req.user!._id.toString();
         const { restaurantId } = req.body;
 
         if (!restaurantId) {
@@ -108,13 +109,13 @@ export const addFavorite = async (
 
 // REMOVE FAVORITE
 export const removeFavorite = async (
-    req: Request<{ id: string }>,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
     try {
-        const userId = (req as any).user.id;
-        const { id: restaurantId } = req.params;
+        const userId = req.user!._id.toString();
+        const { id: restaurantId } = req.params as { id: string };
 
         if (!mongoose.isValidObjectId(restaurantId)) {
             return res.status(400).json({

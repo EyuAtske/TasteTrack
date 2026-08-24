@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
 import mongoose from 'mongoose';
 import Review from '../models/review.model';
 import Restaurant from '../models/restaurant.model';
@@ -34,13 +35,13 @@ const updateRestaurantAverageRating = async (
 
 // CREATE REVIEW
 export const createReview = async (
-    req: Request,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
     try {
         const { restaurant, rating, title, comment } = req.body;
-        const userId = (req as any).user.id;
+        const userId = req.user!._id.toString();
 
         if (!mongoose.isValidObjectId(restaurant)) {
             return res.status(400).json({
@@ -168,14 +169,14 @@ export const getRestaurantReviews = async (
 
 // UPDATE REVIEW
 export const updateReview = async (
-    req: Request,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
     try {
         const { id } = req.params;
         const { rating, title, comment } = req.body;
-        const userId = (req as any).user.id;
+        const userId = req.user!._id.toString();
 
         if (!mongoose.isValidObjectId(id)) {
             return res.status(400).json({
@@ -249,13 +250,13 @@ export const updateReview = async (
 
 // DELETE REVIEW
 export const deleteReview = async (
-    req: Request,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
     try {
         const { id } = req.params;
-        const userId = (req as any).user.id;
+        const userId = req.user!._id.toString();
 
         if (!mongoose.isValidObjectId(id)) {
             return res.status(400).json({
