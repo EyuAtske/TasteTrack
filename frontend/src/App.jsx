@@ -1,85 +1,93 @@
-
 import { useState } from 'react';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Toast from './components/Toast';
-import { UtensilsCrossed } from 'lucide-react';
+import Profile from './pages/Profile';
+import RestaurantForm from './pages/RestaurantForm';
+import { UtensilsCrossed, User, PlusCircle, LogIn, UserPlus } from 'lucide-react';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('login');
-  const [toast, setToast] = useState(null);
-
-  const showToast = (type, title, message) => {
-    setToast({ type, title, message });
-    setTimeout(() => setToast(null), 4000);
-  };
 
   return (
-    <div className="min-h-screen bg-neutral-100/60 text-neutral-900 flex flex-col font-sans">
-      {/* Header */}
-      <header className="bg-white border-b border-neutral-200 py-3.5 px-6 sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-rose-500 flex items-center justify-center text-white shadow-sm">
+    <div className="min-h-screen bg-neutral-100 flex flex-col font-sans">
+      {/* Top Navbar with Page Tabs */}
+      <header className="bg-white border-b border-neutral-200 px-6 py-3.5 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Logo */}
+          <div 
+            onClick={() => setCurrentPage('login')}
+            className="flex items-center gap-2 cursor-pointer select-none"
+          >
+            <div className="w-9 h-9 rounded-xl bg-[#FF385C] flex items-center justify-center text-white shadow-sm">
               <UtensilsCrossed className="w-5 h-5" />
             </div>
-            <span className="text-lg font-bold tracking-tight">
-              Taste<span className="text-rose-500">Track</span>
+            <span className="text-xl font-bold tracking-tight text-[#FF385C]">
+              TasteTrack
             </span>
           </div>
 
-          <div className="flex gap-2 bg-neutral-100 p-1 rounded-full text-xs font-semibold">
+          {/* Member 4 Navigation Switcher */}
+          <nav className="flex items-center bg-neutral-100 p-1 rounded-full border border-neutral-200 text-xs font-semibold overflow-x-auto max-w-full">
             <button
               onClick={() => setCurrentPage('login')}
-              className={`px-3.5 py-1.5 rounded-full transition cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 currentPage === 'login' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-600'
               }`}
             >
-              Login 
+              <LogIn className="w-3.5 h-3.5 text-rose-500" />
+              Log In
             </button>
+
             <button
               onClick={() => setCurrentPage('register')}
-              className={`px-3.5 py-1.5 rounded-full transition cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                 currentPage === 'register' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-600'
               }`}
             >
-              Register 
+              <UserPlus className="w-3.5 h-3.5 text-rose-500" />
+              Sign Up
             </button>
-          </div>
+
+            <button
+              onClick={() => setCurrentPage('profile')}
+              className={`px-3.5 py-1.5 rounded-full transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                currentPage === 'profile' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-600'
+              }`}
+            >
+              <User className="w-3.5 h-3.5 text-rose-500" />
+              User Profile
+            </button>
+
+            <button
+              onClick={() => setCurrentPage('restaurant-form')}
+              className={`px-3.5 py-1.5 rounded-full transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                currentPage === 'restaurant-form' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-600'
+              }`}
+            >
+              <PlusCircle className="w-3.5 h-3.5 text-rose-500" />
+              Admin Form
+            </button>
+          </nav>
         </div>
       </header>
 
-      {/* Main Page Area */}
-      <main className="flex-1 flex items-center justify-center py-8">
-        {currentPage === 'login' ? (
-          <Login
-            onNavigateToRegister={() => setCurrentPage('register')}
-            onLoginSuccess={(email) => {
-              showToast('success', 'Logged in successfully!', `Welcome back, ${email}`);
-            }}
-          />
-        ) : (
-          <Register
-            onNavigateToLogin={() => setCurrentPage('login')}
-            onRegisterSuccess={(name) => {
-              showToast('success', 'Account created!', `Welcome to TasteTrack, ${name}!`);
-              setCurrentPage('login');
-            }}
+      {/* Main Content Area */}
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-8">
+        {currentPage === 'login' && (
+          <Login 
+            onNavigateToRegister={() => setCurrentPage('register')} 
+            onLoginSuccess={() => setCurrentPage('profile')}
           />
         )}
-      </main>
-
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-5 right-5 z-50 max-w-sm w-full">
-          <Toast
-            type={toast.type}
-            title={toast.title}
-            message={toast.message}
-            onClose={() => setToast(null)}
+        {currentPage === 'register' && (
+          <Register 
+            onNavigateToLogin={() => setCurrentPage('login')} 
+            onRegisterSuccess={() => setCurrentPage('profile')}
           />
-        </div>
-      )}
+        )}
+        {currentPage === 'profile' && <Profile />}
+        {currentPage === 'restaurant-form' && <RestaurantForm />}
+      </main>
     </div>
   );
 }
