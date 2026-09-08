@@ -37,4 +37,9 @@ const RestaurantSchema: Schema = new Schema(
     { timestamps: true } // Automatically manages createdAt and updatedAt
 );
 
+RestaurantSchema.index({ category: 1 });
+RestaurantSchema.index({ priceRange: 1 });
+RestaurantSchema.index({ averageRating: -1 });
+RestaurantSchema.index({ createdAt: -1 });
+
 export default mongoose.model<IRestaurant>('Restaurant', RestaurantSchema);

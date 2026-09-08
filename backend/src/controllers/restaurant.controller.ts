@@ -2,6 +2,23 @@ import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import Restaurant from '../models/restaurant.model';
 
+const getPagination = (req: Request) => {
+    const page = Number(req.query.page);
+    const limit = Number(req.query.limit);
+
+    const currentPage = Number.isInteger(page) && page > 0 ? page : 1;
+    const itemsPerPage =
+        Number.isInteger(limit) && limit > 0
+            ? Math.min(limit, 50)
+            : 10;
+
+    return {
+        page: currentPage,
+        limit: itemsPerPage,
+        skip: (currentPage - 1) * itemsPerPage,
+    };
+};
+
 // Builds public URLs from uploaded files
 const buildImageUrls = (req: Request): string[] => {
     if (!req.files || !Array.isArray(req.files)) return [];
@@ -13,9 +30,7 @@ const buildImageUrls = (req: Request): string[] => {
 //  Pagination added
 export const getRestaurants = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
-        const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string, 10) || 10));
-        const skip = (page - 1) * limit;
+        const { page, limit, skip } = getPagination(req);
 
         const [restaurants, total] = await Promise.all([
             Restaurant.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
@@ -109,25 +124,46 @@ export const searchRestaurants = async (req: Request, res: Response, next: NextF
     try {
         const { query } = req.query;
 
-        if (!query || typeof query !== 'string') {
-            return res.status(400).json({ success: false, message: 'Search query is required' });
+        if (!query || typeof query !== 'string' || !query.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Search query is required',
+            });
         }
 
-        // Case-insensitive regex search across name, cuisine, and description
-        const searchRegex = new RegExp(query, 'i');
-        
-        const restaurants = await Restaurant.find({
+        const searchQuery = query.trim();
+
+        // Escape regex special characters so user input is treated as text
+        const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const searchRegex = new RegExp(escapedQuery, 'i');
+
+        const { page, limit, skip } = getPagination(req);
+
+        const filter = {
             $or: [
                 { name: searchRegex },
                 { cuisine: searchRegex },
-                { description: searchRegex }
-            ]
-        }).select('name cuisine priceRange averageRating images address');
+                { description: searchRegex },
+            ],
+        };
 
-        res.status(200).json({ 
-            success: true, 
-            count: restaurants.length, 
-            data: restaurants 
+        const [restaurants, total] = await Promise.all([
+            Restaurant.find(filter)
+                .select('name cuisine priceRange averageRating images address')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+
+            Restaurant.countDocuments(filter),
+        ]);
+
+        res.status(200).json({
+            success: true,
+            count: restaurants.length,
+            total,
+            totalPages: Math.ceil(total / limit),
+            currentPage: page,
+            data: restaurants,
         });
     } catch (error) {
         next(error);
@@ -139,21 +175,70 @@ export const filterRestaurants = async (req: Request, res: Response, next: NextF
     try {
         const { category, priceRange, minRating } = req.query;
 
-        // Build the filter object dynamically
-        const filter: any = {};
+        const filter: Record<string, unknown> = {};
 
-        if (category) filter.category = category;
-        if (priceRange) filter.priceRange = priceRange; // e.g., "$", "$$", "$$$"
-        if (minRating) filter.averageRating = { $gte: Number(minRating) };
+        // Category validation
+        if (category !== undefined) {
+            if (typeof category !== 'string' || !category.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid category',
+                });
+            }
 
-        const restaurants = await Restaurant.find(filter)
-            .select('name category cuisine priceRange averageRating images address')
-            .sort({ averageRating: -1 }); // Sort by highest rating first for better UX
+            filter.category = category.trim();
+        }
 
-        res.status(200).json({ 
-            success: true, 
-            count: restaurants.length, 
-            data: restaurants 
+        // Price range validation
+        const validPriceRanges = ['$', '$$', '$$$', '$$$$'];
+
+        if (priceRange !== undefined) {
+            if (
+                typeof priceRange !== 'string' ||
+                !validPriceRanges.includes(priceRange)
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid price range',
+                });
+            }
+
+            filter.priceRange = priceRange;
+        }
+
+        // Minimum rating validation
+        if (minRating !== undefined) {
+            const rating = Number(minRating);
+
+            if (!Number.isFinite(rating) || rating < 0 || rating > 5) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'minRating must be a number between 0 and 5',
+                });
+            }
+
+            filter.averageRating = { $gte: rating };
+        }
+
+        const { page, limit, skip } = getPagination(req);
+
+        const [restaurants, total] = await Promise.all([
+            Restaurant.find(filter)
+                .select('name category cuisine priceRange averageRating images address')
+                .sort({ averageRating: -1 })
+                .skip(skip)
+                .limit(limit),
+
+            Restaurant.countDocuments(filter),
+        ]);
+
+        res.status(200).json({
+            success: true,
+            count: restaurants.length,
+            total,
+            totalPages: Math.ceil(total / limit),
+            currentPage: page,
+            data: restaurants,
         });
     } catch (error) {
         next(error);
