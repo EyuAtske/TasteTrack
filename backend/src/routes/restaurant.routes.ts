@@ -4,16 +4,20 @@ import {
     getRestaurantById,
     createRestaurant,
     updateRestaurant,
-    deleteRestaurant
+    deleteRestaurant,
+    searchRestaurants,   
+    filterRestaurants    
 } from '../controllers/restaurant.controller';
 
-
 import { getRestaurantReviews } from '../controllers/review.controller'; 
-
 import { protect, admin } from '../middleware/auth.middleware';
 import { uploadRestaurantImages } from '../middleware/upload.middleware';
 
 const router = Router();
+
+router.get('/search', searchRestaurants);
+router.get('/filter', filterRestaurants);
+
 
 router.route('/')
     .get(getRestaurants)
