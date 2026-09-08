@@ -103,3 +103,59 @@ export const deleteRestaurant = async (req: Request, res: Response, next: NextFu
         next(error);
     }
 };
+
+// SEARCH restaurants (by name, cuisine, or description)
+export const searchRestaurants = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { query } = req.query;
+
+        if (!query || typeof query !== 'string') {
+            return res.status(400).json({ success: false, message: 'Search query is required' });
+        }
+
+        // Case-insensitive regex search across name, cuisine, and description
+        const searchRegex = new RegExp(query, 'i');
+        
+        const restaurants = await Restaurant.find({
+            $or: [
+                { name: searchRegex },
+                { cuisine: searchRegex },
+                { description: searchRegex }
+            ]
+        }).select('name cuisine priceRange averageRating images address');
+
+        res.status(200).json({ 
+            success: true, 
+            count: restaurants.length, 
+            data: restaurants 
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+//  FILTER restaurants (by category, priceRange, minRating)
+export const filterRestaurants = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { category, priceRange, minRating } = req.query;
+
+        // Build the filter object dynamically
+        const filter: any = {};
+
+        if (category) filter.category = category;
+        if (priceRange) filter.priceRange = priceRange; // e.g., "$", "$$", "$$$"
+        if (minRating) filter.averageRating = { $gte: Number(minRating) };
+
+        const restaurants = await Restaurant.find(filter)
+            .select('name category cuisine priceRange averageRating images address')
+            .sort({ averageRating: -1 }); // Sort by highest rating first for better UX
+
+        res.status(200).json({ 
+            success: true, 
+            count: restaurants.length, 
+            data: restaurants 
+        });
+    } catch (error) {
+        next(error);
+    }
+};

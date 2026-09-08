@@ -6,8 +6,11 @@ services:
     container_name: tastetrack-backend
     ports:
       - "5000:5000"
-    env_file:
-      - ./backend/.env
+    # ADD THIS ENVIRONMENT BLOCK:
+    environment:
+      - PORT=5000
+      - MONGO_URI=mongodb://admin:password@tastetrack-mongo:27017/tastetrack?authSource=admin
+      - JWT_SECRET=HilcoeProjectSecretKey
     depends_on:
       - mongo
     volumes:
@@ -36,8 +39,8 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
     volumes:
       - mongo-data:/data/db
     restart: unless-stopped
