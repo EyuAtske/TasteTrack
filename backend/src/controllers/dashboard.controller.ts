@@ -1,15 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
 import User from '../models/user.model';
 import Restaurant from '../models/restaurant.model';
 import Review from '../models/review.model';
 
 export const getDashboardStats = async (
-    req: Request,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
     try {
-        const userId = (req as any).user.id;
+        const userId = req.user!._id.toString();
 
         const [
             totalRestaurants,

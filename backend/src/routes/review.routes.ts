@@ -5,18 +5,19 @@ import {
     deleteReview,
     getRestaurantReviews
 } from '../controllers/review.controller';
+import { protect } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Note: The API plan specifies POST /api/reviews
+router.route('/restaurants/:id/reviews').get(getRestaurantReviews);
 router.route('/')
-    .post(createReview); 
+    .post(protect, createReview); 
 
 router.route('/:id')
-    .put(updateReview)
-    .delete(deleteReview);
+    .put(protect, updateReview)
+    .delete(protect, deleteReview);
 
 // Nested route for getting reviews of a specific restaurant
-router.route('/restaurants/:id/reviews').get(getRestaurantReviews);
 
 export default router;
