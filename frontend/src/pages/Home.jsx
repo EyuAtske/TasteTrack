@@ -1,238 +1,257 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Utensils, Star, Flame, Compass, Award, ArrowRight, Heart } from 'lucide-react';
+import {
+  Search,
+  Utensils,
+  Pizza,
+  Fish,
+  Flame,
+  Salad,
+  Wine,
+  Coffee,
+  Star,
+  Compass,
+  Heart,
+  ShieldCheck,
+  SlidersHorizontal,
+  ChevronRight,
+  MapPin,
+  DollarSign,
+  Sparkles,
+} from 'lucide-react';
 import { restaurantApi } from '../api/restaurantApi';
 import RestaurantCard from '../components/RestaurantCard';
 
 const CATEGORIES = [
-  { id: 'All', label: 'All Cuisines', icon: '🍽️' },
-  { id: 'Italian', label: 'Italian', icon: '🍕' },
-  { id: 'Japanese', label: 'Japanese', icon: '🍣' },
-  { id: 'BBQ', label: 'Craft BBQ', icon: '🥩' },
-  { id: 'Vegan', label: 'Plant-Based', icon: '🥗' },
-  { id: 'Fine Dining', label: 'Fine Dining', icon: '🍷' },
-  { id: 'Cafes', label: 'Cafes & Bakery', icon: '☕' },
+  { id: 'All', label: 'All Places', icon: Utensils },
+  { id: 'Italian', label: 'Italian', icon: Pizza },
+  { id: 'Japanese', label: 'Japanese', icon: Fish },
+  { id: 'BBQ', label: 'BBQ', icon: Flame },
+  { id: 'Vegan', label: 'Vegan', icon: Salad },
+  { id: 'Fine Dining', label: 'Fine Dining', icon: Wine },
+  { id: 'Cafes', label: 'Cafes', icon: Coffee },
 ];
 
 export default function Home() {
-  const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [restaurants, setRestaurants] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchLocation, setSearchLocation] = useState('');
+  const [searchCuisine, setSearchCuisine] = useState('');
+  const [searchPrice, setSearchPrice] = useState('All');
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchRestaurants = async () => {
-      setIsLoading(true);
-      try {
-        const data = await restaurantApi.getRestaurants({ category: selectedCategory });
-        setFeaturedRestaurants(data.restaurants || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchRestaurants();
   }, [selectedCategory]);
 
-  const handleHeroSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/restaurants?search=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      navigate('/restaurants');
+  const fetchRestaurants = async () => {
+    setIsLoading(true);
+    try {
+      const data = await restaurantApi.getRestaurants({ category: selectedCategory });
+      setRestaurants(data.restaurants || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleAirbnbSearchSubmit = (e) => {
+    e.preventDefault();
+    const queryParams = new URLSearchParams();
+    if (searchLocation.trim()) queryParams.set('search', searchLocation.trim());
+    if (searchCuisine.trim()) queryParams.set('category', searchCuisine.trim());
+    if (searchPrice !== 'All') queryParams.set('priceRange', searchPrice);
+
+    navigate(`/restaurants?${queryParams.toString()}`);
+  };
+
   return (
-    <div className="space-y-12 sm:space-y-16">
-      {/* Hero Section */}
-      <section className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white min-h-[480px] sm:min-h-[520px] flex items-center justify-center p-6 sm:p-12 shadow-2xl">
-        <img
-          src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1600&auto=format&fit=crop&q=80"
-          alt="Restaurant hero"
-          className="absolute inset-0 w-full h-full object-cover opacity-35 scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-900/60 to-black/30" />
-
-        <div className="relative z-10 max-w-3xl text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold tracking-wide text-rose-300">
-            <Flame className="w-4 h-4 text-rose-400" />
-            <span>Discover the world's most irresistible flavors</span>
+    <div className="space-y-10 text-[#222222]">
+      {/* Floating Airbnb Signature Search Bar Section */}
+      <section className="pt-2 pb-4 flex flex-col items-center">
+        {/* Airbnb Search Capsule */}
+        <form
+          onSubmit={handleAirbnbSearchSubmit}
+          className="w-full max-w-4xl bg-white rounded-full border border-[#DDDDDD] shadow-lg hover:shadow-xl transition-shadow duration-300 p-2 flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-[#EBEBEB]"
+        >
+          {/* Segment 1: Location */}
+          <div className="flex-1 w-full px-6 py-2 flex flex-col justify-center hover:bg-neutral-100/70 rounded-full transition cursor-pointer">
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-[#222222]">
+              Where
+            </label>
+            <input
+              type="text"
+              placeholder="Search destinations, neighborhoods..."
+              value={searchLocation}
+              onChange={(e) => setSearchLocation(e.target.value)}
+              className="w-full text-xs font-semibold text-[#222222] placeholder-[#717171] bg-transparent outline-none truncate"
+            />
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
-            Find Your Next <span className="bg-gradient-to-r from-rose-400 via-amber-300 to-rose-500 bg-clip-text text-transparent">Unforgettable Meal</span>
-          </h1>
-
-          <p className="text-sm sm:text-base text-neutral-300 max-w-xl mx-auto leading-relaxed">
-            TasteTrack connects passionate food lovers with top-rated restaurants, hidden neighborhood gems, and authentic foodie reviews.
-          </p>
-
-          {/* Hero Search Box */}
-          <form onSubmit={handleHeroSearch} className="max-w-2xl mx-auto pt-2">
-            <div className="p-2 bg-white rounded-2xl sm:rounded-full shadow-2xl flex flex-col sm:flex-row items-center gap-2 border border-white/20">
-              <div className="flex-1 flex items-center gap-3 pl-4 w-full">
-                <Search className="w-5 h-5 text-neutral-400 shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Search by restaurant name, dish, or location..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full py-2 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none bg-transparent"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-600 text-white text-xs font-bold rounded-xl sm:rounded-full transition duration-200 cursor-pointer shadow-md flex items-center justify-center gap-2 shrink-0"
-              >
-                <span>Find Food</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </form>
-
-          {/* Quick Tags */}
-          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-neutral-300 pt-2">
-            <span className="font-semibold text-neutral-400">Popular:</span>
-            <button onClick={() => navigate('/restaurants?category=Italian')} className="hover:text-rose-300 underline underline-offset-2">Wood-fired Pizza</button>
-            <span>•</span>
-            <button onClick={() => navigate('/restaurants?category=Japanese')} className="hover:text-rose-300 underline underline-offset-2">Sushi Omakase</button>
-            <span>•</span>
-            <button onClick={() => navigate('/restaurants?category=BBQ')} className="hover:text-rose-300 underline underline-offset-2">Smokey BBQ</button>
+          {/* Segment 2: Cuisine */}
+          <div className="flex-1 w-full px-6 py-2 flex flex-col justify-center hover:bg-neutral-100/70 rounded-full transition cursor-pointer">
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-[#222222]">
+              Cuisine
+            </label>
+            <input
+              type="text"
+              placeholder="Italian, Sushi, BBQ, Vegan..."
+              value={searchCuisine}
+              onChange={(e) => setSearchCuisine(e.target.value)}
+              className="w-full text-xs font-semibold text-[#222222] placeholder-[#717171] bg-transparent outline-none truncate"
+            />
           </div>
-        </div>
+
+          {/* Segment 3: Price Range */}
+          <div className="w-full md:w-48 px-6 py-2 flex flex-col justify-center hover:bg-neutral-100/70 rounded-full transition cursor-pointer">
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-[#222222]">
+              Price
+            </label>
+            <select
+              value={searchPrice}
+              onChange={(e) => setSearchPrice(e.target.value)}
+              className="w-full text-xs font-semibold text-[#222222] bg-transparent outline-none cursor-pointer"
+            >
+              <option value="All">Any price</option>
+              <option value="$">$ (Budget)</option>
+              <option value="$$">$$ (Moderate)</option>
+              <option value="$$$">$$$ (Upscale)</option>
+              <option value="$$$$">$$$$ (Fine dining)</option>
+            </select>
+          </div>
+
+          {/* Search Button Circle */}
+          <div className="p-1 w-full md:w-auto flex justify-end">
+            <button
+              type="submit"
+              className="w-12 h-12 rounded-full bg-[#FF385C] hover:bg-[#E00B41] text-white flex items-center justify-center transition-transform active:scale-95 shadow-md shrink-0 cursor-pointer"
+              title="Search restaurants"
+            >
+              <Search className="w-5 h-5 stroke-[2.5]" />
+            </button>
+          </div>
+        </form>
       </section>
 
-      {/* Category Pills Bar */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900">Explore by Category</h2>
-            <p className="text-xs text-neutral-500">Pick a cuisine to filter top dining spots around town</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-none">
+      {/* Airbnb Style Category Tabs */}
+      <section className="border-b border-[#EBEBEB] pb-3">
+        <div className="flex items-center gap-8 overflow-x-auto scrollbar-none px-2 py-1">
           {CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
             const isSelected = selectedCategory === cat.id;
+
             return (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
+                className={`flex flex-col items-center gap-2 pb-3 min-w-[64px] border-b-2 transition-all cursor-pointer group ${
                   isSelected
-                    ? 'bg-neutral-900 text-white border-neutral-900 shadow-md scale-105'
-                    : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                    ? 'border-[#222222] text-[#222222] font-bold'
+                    : 'border-transparent text-[#717171] hover:text-[#222222] hover:border-[#DDDDDD] font-medium'
                 }`}
               >
-                <span>{cat.icon}</span>
-                <span>{cat.label}</span>
+                <Icon
+                  className={`w-6 h-6 transition-transform group-hover:scale-110 ${
+                    isSelected ? 'text-[#222222]' : 'text-[#717171] group-hover:text-[#222222]'
+                  }`}
+                />
+                <span className="text-xs tracking-tight whitespace-nowrap">{cat.label}</span>
               </button>
             );
           })}
         </div>
       </section>
 
-      {/* Featured Restaurants Grid */}
+      {/* Main Content Grid: Airbnb Neighborhood Discoveries */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900">
-              {selectedCategory === 'All' ? 'Trending Dining Spots' : `${selectedCategory} Restaurants`}
+            <h2 className="text-2xl font-bold tracking-tight text-[#222222]">
+              {selectedCategory === 'All' ? 'Top-rated spots near you' : `${selectedCategory} dining`}
             </h2>
-            <p className="text-xs text-neutral-500">Highest rated places curated by TasteTrack members</p>
+            <p className="text-xs text-[#717171] mt-0.5">Handpicked places loved by local foodies</p>
           </div>
           <Link
             to="/restaurants"
-            className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline"
+            className="flex items-center gap-1 text-xs font-semibold text-[#222222] hover:underline"
           >
-            <span>View All</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>Show all ({restaurants.length})</span>
+            <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="h-80 bg-neutral-200/60 rounded-2xl animate-pulse" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="space-y-3 animate-pulse">
+                <div className="aspect-square bg-[#EBEBEB] rounded-2xl" />
+                <div className="h-4 bg-[#EBEBEB] rounded w-3/4" />
+                <div className="h-3 bg-[#EBEBEB] rounded w-1/2" />
+              </div>
             ))}
           </div>
-        ) : featuredRestaurants.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredRestaurants.map((restaurant) => (
+        ) : restaurants.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {restaurants.map((restaurant) => (
               <RestaurantCard key={restaurant._id} restaurant={restaurant} />
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-3xl border border-neutral-200 p-8">
-            <Utensils className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-neutral-800">No restaurants found</h3>
-            <p className="text-xs text-neutral-500 mt-1">Try selecting another category or clear filters.</p>
+          <div className="text-center py-16 bg-white rounded-3xl border border-[#DDDDDD] p-8 space-y-3">
+            <Utensils className="w-10 h-10 text-[#717171] mx-auto" />
+            <h3 className="text-base font-bold text-[#222222]">No dining spots found</h3>
+            <p className="text-xs text-[#717171]">Try switching categories or clearing search filters.</p>
           </div>
         )}
       </section>
 
-      {/* Why Choose TasteTrack Feature Grid */}
-      <section className="bg-gradient-to-b from-rose-50/50 to-neutral-100/50 rounded-3xl p-8 sm:p-12 border border-rose-100/60 space-y-8">
-        <div className="text-center max-w-xl mx-auto space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
-            Why Foodies Love TasteTrack
+      {/* Airbnb Feature Card Banner */}
+      <section className="bg-[#F7F7F7] rounded-3xl p-8 sm:p-12 border border-[#EBEBEB] space-y-8">
+        <div className="max-w-xl space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FF385C]/10 text-[#FF385C] rounded-full text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>TasteTrack Guarantee</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#222222]">
+            Discover places with total confidence
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-600">
-            Designed to make food discovery seamless, honest, and delightfully social.
+          <p className="text-xs sm:text-sm text-[#717171]">
+            Every review on TasteTrack is published by real community diners and verified taste critics.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-neutral-200/80 shadow-xs space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
-              <Star className="w-5 h-5" />
+          <div className="bg-white p-6 rounded-2xl border border-[#DDDDDD] shadow-xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-[#FF385C]/10 text-[#FF385C] flex items-center justify-center font-bold">
+              <Star className="w-5 h-5 fill-[#FF385C]" />
             </div>
-            <h3 className="font-bold text-base text-neutral-900">Honest Ratings & Reviews</h3>
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              Read real feedback from verified diners. No fake promotional hype—just genuine taste experiences.
+            <h3 className="font-bold text-sm text-[#222222]">Verified Diner Ratings</h3>
+            <p className="text-xs text-[#717171] leading-relaxed">
+              Transparent review scores reflecting authentic dish quality, service, and ambiance.
             </p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-neutral-200/80 shadow-xs space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
-              <Heart className="w-5 h-5" />
+          <div className="bg-white p-6 rounded-2xl border border-[#DDDDDD] shadow-xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-[#FF385C]/10 text-[#FF385C] flex items-center justify-center font-bold">
+              <Heart className="w-5 h-5 fill-[#FF385C]" />
             </div>
-            <h3 className="font-bold text-base text-neutral-900">Personalized Wishlists</h3>
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              Save your favorite restaurants with a single click and organize your bucket list for upcoming weekend dining.
+            <h3 className="font-bold text-sm text-[#222222]">Saved Wishlists</h3>
+            <p className="text-xs text-[#717171] leading-relaxed">
+              Bookmark restaurants you want to visit and share lists with friends seamlessly.
             </p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-neutral-200/80 shadow-xs space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center font-bold">
-              <Compass className="w-5 h-5" />
+          <div className="bg-white p-6 rounded-2xl border border-[#DDDDDD] shadow-xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-[#FF385C]/10 text-[#FF385C] flex items-center justify-center font-bold">
+              <ShieldCheck className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-base text-neutral-900">Smart Search & Filter</h3>
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              Filter by cuisine, price range ($ to $$$$), opening hours, and location to find exactly what you're craving.
+            <h3 className="font-bold text-sm text-[#222222]">Community Trusted</h3>
+            <p className="text-xs text-[#717171] leading-relaxed">
+              Join over 12,000 foodies tracking their favorite restaurants around the world.
             </p>
           </div>
-        </div>
-      </section>
-
-      {/* CTA Join Banner */}
-      <section className="bg-neutral-900 rounded-3xl p-8 sm:p-12 text-white text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden">
-        <div className="space-y-2 max-w-xl z-10">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Ready to start tracking your food journey?</h2>
-          <p className="text-xs sm:text-sm text-neutral-400">
-            Create an account today to write reviews, save favorites, and unlock your personal foodie dashboard.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 shrink-0 z-10">
-          <Link
-            to="/register"
-            className="px-6 py-3 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-600 text-white text-xs font-bold rounded-xl shadow-lg transition"
-          >
-            Join TasteTrack
-          </Link>
         </div>
       </section>
     </div>
