@@ -9,30 +9,36 @@ const PRICE_RANGES = ['All', '$', '$$', '$$$', '$$$$'];
 
 export default function RestaurantList() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialSearch = searchParams.get('search') || '';
-  const initialCategory = searchParams.get('category') || 'All';
+
+  const searchQuery = searchParams.get('search') || '';
+  const category = searchParams.get('category') || 'All';
+  const priceRange = searchParams.get('priceRange') || 'All';
+  const locationQuery = searchParams.get('location') || '';
 
   const [restaurants, setRestaurants] = useState([]);
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [category, setCategory] = useState(initialCategory);
-  const [priceRange, setPriceRange] = useState('All');
+  const [inputSearch, setInputSearch] = useState(searchQuery);
+  const [inputLocation, setInputLocation] = useState(locationQuery);
   const [sortBy, setSortBy] = useState('rating');
   const [isLoading, setIsLoading] = useState(true);
 
+  // Sync internal input fields whenever URL searchParams change
   useEffect(() => {
+    setInputSearch(searchParams.get('search') || '');
+    setInputLocation(searchParams.get('location') || '');
     fetchRestaurants();
-  }, [category, priceRange, sortBy]);
+  }, [searchParams, sortBy]);
 
   const fetchRestaurants = async () => {
     setIsLoading(true);
     try {
       const data = await restaurantApi.getRestaurants({
-        search: searchQuery,
-        category: category !== 'All' ? category : undefined,
-        priceRange: priceRange !== 'All' ? priceRange : undefined,
+        search: searchParams.get('search') || undefined,
+        location: searchParams.get('location') || undefined,
+        category: searchParams.get('category') && searchParams.get('category') !== 'All' ? searchParams.get('category') : undefined,
+        priceRange: searchParams.get('priceRange') && searchParams.get('priceRange') !== 'All' ? searchParams.get('priceRange') : undefined,
       });
 
-      let list = data.restaurants || [];
+      let list = data.restaurants || data.data || [];
 
       // Client sort
       if (sortBy === 'rating') {
@@ -53,15 +59,43 @@ export default function RestaurantList() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    setSearchParams({ search: searchQuery, category });
-    fetchRestaurants();
+    const newParams = new URLSearchParams(searchParams);
+    if (inputSearch.trim()) {
+      newParams.set('search', inputSearch.trim());
+    } else {
+      newParams.delete('search');
+    }
+    if (inputLocation.trim()) {
+      newParams.set('location', inputLocation.trim());
+    } else {
+      newParams.delete('location');
+    }
+    setSearchParams(newParams);
+  };
+
+  const handleCategoryChange = (newCat) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (newCat && newCat !== 'All') {
+      newParams.set('category', newCat);
+    } else {
+      newParams.delete('category');
+    }
+    setSearchParams(newParams);
+  };
+
+  const handlePriceChange = (newPrice) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (newPrice && newPrice !== 'All') {
+      newParams.set('priceRange', newPrice);
+    } else {
+      newParams.delete('priceRange');
+    }
+    setSearchParams(newParams);
   };
 
   const resetFilters = () => {
-    setSearchQuery('');
-    setCategory('All');
-    setPriceRange('All');
-    setSortBy('rating');
+    setInputSearch('');
+    setInputLocation('');
     setSearchParams({});
   };
 
@@ -78,21 +112,30 @@ export default function RestaurantList() {
           </p>
         </div>
 
-        {/* Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-80">
-          <div className="relative w-full">
+        {/* Search & Location Bar */}
+        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full sm:w-48">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="text"
-              placeholder="Search by name, dish, location..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:border-rose-500 focus:bg-white transition"
+              placeholder="Search keyword..."
+              value={inputSearch}
+              onChange={(e) => setInputSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:border-rose-500 focus:bg-white transition"
+            />
+          </div>
+          <div className="relative w-full sm:w-48">
+            <input
+              type="text"
+              placeholder="Location e.g. NY, Brooklyn"
+              value={inputLocation}
+              onChange={(e) => setInputLocation(e.target.value)}
+              className="w-full pl-3 pr-3 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-2xl outline-none focus:border-rose-500 focus:bg-white transition"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold rounded-2xl transition cursor-pointer shrink-0"
+            className="w-full sm:w-auto px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold rounded-2xl transition cursor-pointer shrink-0"
           >
             Search
           </button>
@@ -110,7 +153,7 @@ export default function RestaurantList() {
           {/* Category Dropdown */}
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => handleCategoryChange(e.target.value)}
             className="px-3 py-1.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-700 outline-none cursor-pointer hover:border-neutral-300"
           >
             {CATEGORIES.map((cat) => (
@@ -121,7 +164,7 @@ export default function RestaurantList() {
           {/* Price Range Dropdown */}
           <select
             value={priceRange}
-            onChange={(e) => setPriceRange(e.target.value)}
+            onChange={(e) => handlePriceChange(e.target.value)}
             className="px-3 py-1.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs font-medium text-neutral-700 outline-none cursor-pointer hover:border-neutral-300"
           >
             {PRICE_RANGES.map((pr) => (
@@ -130,7 +173,7 @@ export default function RestaurantList() {
           </select>
 
           {/* Reset Filters button */}
-          {(category !== 'All' || priceRange !== 'All' || searchQuery) && (
+          {(category !== 'All' || priceRange !== 'All' || searchQuery || locationQuery) && (
             <button
               onClick={resetFilters}
               className="flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 font-semibold cursor-pointer ml-1"

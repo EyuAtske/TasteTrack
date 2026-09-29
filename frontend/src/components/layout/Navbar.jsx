@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   UtensilsCrossed,
   Search,
@@ -10,15 +10,22 @@ import {
   LogOut,
   Shield,
   PlusCircle,
+  MapPin,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import SearchModal from '../SearchModal';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const activeLocation = searchParams.get('location') || 'Anywhere';
+  const activeCategory = searchParams.get('category') || 'Any cuisine';
+  const activeKeyword = searchParams.get('search');
 
   const handleLogout = async () => {
     await logout();
@@ -27,35 +34,42 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white border-b border-[#EBEBEB] text-[#222222]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Left: Brand Logo in Airbnb Coral #FF385C */}
-          <Link to="/" className="flex items-center gap-2 group cursor-pointer shrink-0">
-            <img
-              src="/TasteTrackLogo.png"
-              alt="TasteTrack Logo"
-              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-200"
-            />
-            <span className="font-extrabold text-xl tracking-tight text-[#FF385C]">
-              TasteTrack
-            </span>
-          </Link>
+    <>
+      <header className="sticky top-0 z-40 w-full bg-white border-b border-[#EBEBEB] text-[#222222]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            {/* Left: Brand Logo in Airbnb Coral #FF385C */}
+            <Link to="/" className="flex items-center gap-2 group cursor-pointer shrink-0">
+              <img
+                src="/TasteTrackLogo.png"
+                alt="TasteTrack Logo"
+                className="h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-200"
+              />
+              <span className="font-extrabold text-xl tracking-tight text-[#FF385C]">
+                TasteTrack
+              </span>
+            </Link>
 
-          {/* Center: Airbnb Compact Search Capsule */}
-          <button
-            onClick={() => navigate('/restaurants')}
-            className="hidden md:flex items-center gap-3 px-4 py-2.5 rounded-full border border-[#DDDDDD] shadow-xs hover:shadow-md transition duration-200 cursor-pointer text-xs font-semibold"
-          >
-            <span className="text-[#222222]">Anywhere</span>
-            <span className="w-1 h-1 rounded-full bg-[#DDDDDD]" />
-            <span className="text-[#222222]">Any cuisine</span>
-            <span className="w-1 h-1 rounded-full bg-[#DDDDDD]" />
-            <span className="text-[#717171]">Search restaurants</span>
-            <div className="w-7 h-7 rounded-full bg-[#FF385C] text-white flex items-center justify-center ml-1">
-              <Search className="w-3.5 h-3.5 stroke-[3]" />
-            </div>
-          </button>
+            {/* Center: Airbnb Interactive Compact Search Capsule */}
+            <button
+              onClick={() => setIsSearchModalOpen(true)}
+              className="hidden md:flex items-center gap-3 px-4 py-2.5 rounded-full border border-[#DDDDDD] shadow-xs hover:shadow-md transition duration-200 cursor-pointer text-xs font-semibold bg-white"
+            >
+              <span className={`truncate max-w-[120px] ${activeLocation !== 'Anywhere' ? 'text-[#FF385C] font-extrabold' : 'text-[#222222]'}`}>
+                {activeLocation}
+              </span>
+              <span className="w-1 h-1 rounded-full bg-[#DDDDDD]" />
+              <span className={`truncate max-w-[110px] ${activeCategory !== 'Any cuisine' ? 'text-[#FF385C] font-extrabold' : 'text-[#222222]'}`}>
+                {activeCategory}
+              </span>
+              <span className="w-1 h-1 rounded-full bg-[#DDDDDD]" />
+              <span className="text-[#717171] truncate max-w-[120px]">
+                {activeKeyword ? `"${activeKeyword}"` : 'Search spots'}
+              </span>
+              <div className="w-7 h-7 rounded-full bg-[#FF385C] text-white flex items-center justify-center ml-1 shrink-0">
+                <Search className="w-3.5 h-3.5 stroke-[3]" />
+              </div>
+            </button>
 
           {/* Right: Actions & User Capsule Pill */}
           <div className="flex items-center gap-3">
@@ -181,5 +195,7 @@ export default function Navbar() {
         </div>
       </div>
     </header>
+    <SearchModal isOpen={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} />
+    </>
   );
 }

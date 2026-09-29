@@ -36,8 +36,15 @@ export const restaurantApi = {
             r.name.toLowerCase().includes(q) ||
             r.description.toLowerCase().includes(q) ||
             r.category.toLowerCase().includes(q) ||
-            r.cuisine.toLowerCase().includes(q)
+            r.cuisine.toLowerCase().includes(q) ||
+            (r.address && r.address.toLowerCase().includes(q))
         );
+      }
+
+      // Filter by location query if provided
+      if (params.location && params.location !== 'Anywhere') {
+        const loc = params.location.toLowerCase();
+        list = list.filter((r) => r.address && r.address.toLowerCase().includes(loc));
       }
 
       // Filter by category
