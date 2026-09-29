@@ -58,6 +58,23 @@ export const reviewApi = {
     }
   },
 
+  updateReview: async (id, data) => {
+    try {
+      const response = await axiosClient.put(`/reviews/${id}`, data);
+      return response.data;
+    } catch (err) {
+      console.warn('Backend unavailable, updating mock review.', err?.message);
+      const list = getLocalMockReviews();
+      const updated = list.map((r) =>
+        r._id === id
+          ? { ...r, rating: Number(data.rating), title: data.title, comment: data.comment }
+          : r
+      );
+      saveLocalMockReviews(updated);
+      return { message: 'Review updated (Mock mode)' };
+    }
+  },
+
   deleteReview: async (id) => {
     try {
       const response = await axiosClient.delete(`/reviews/${id}`);

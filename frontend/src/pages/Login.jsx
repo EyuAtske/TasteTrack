@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { UtensilsCrossed, Star, ArrowRight, ShieldCheck, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -14,6 +14,8 @@ export default function Login() {
   const { login } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +33,7 @@ export default function Login() {
       const result = await login(email, password);
       if (result.success) {
         addToast('Welcome back!', `Logged in as ${result.user.name}`, 'success');
-        navigate('/dashboard');
+        navigate(from, { replace: true });
       }
     } catch (err) {
       addToast('Login Failed', err.response?.data?.message || 'Invalid email or password.', 'error');

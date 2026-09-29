@@ -8,9 +8,9 @@ import {
   Plus,
   Shield,
   Trash2,
-  ExternalLink,
+  Pencil,
   Utensils,
-  UserCheck,
+  ArrowUpRight,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -42,8 +42,17 @@ export default function Dashboard() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Admin: all restaurants list + delete modal
+  const [allRestaurants, setAllRestaurants] = useState([]);
+  const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(false);
+  const [deletingRestaurantId, setDeletingRestaurantId] = useState(null);
+  const [deletingRestaurantName, setDeletingRestaurantName] = useState('');
+  const [isDeleteRestaurantModalOpen, setIsDeleteRestaurantModalOpen] = useState(false);
+  const [isDeletingRestaurant, setIsDeletingRestaurant] = useState(false);
+
   useEffect(() => {
     fetchDashboard();
+    if (user?.role === 'admin') fetchAllRestaurants();
   }, [user]);
 
   const fetchDashboard = async () => {
@@ -55,6 +64,40 @@ export default function Dashboard() {
       console.error(err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchAllRestaurants = async () => {
+    setIsLoadingRestaurants(true);
+    try {
+      const data = await restaurantApi.getRestaurants();
+      setAllRestaurants(data.restaurants || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingRestaurants(false);
+    }
+  };
+
+  const confirmDeleteRestaurant = (id, name) => {
+    setDeletingRestaurantId(id);
+    setDeletingRestaurantName(name);
+    setIsDeleteRestaurantModalOpen(true);
+  };
+
+  const handleDeleteRestaurant = async () => {
+    setIsDeletingRestaurant(true);
+    try {
+      await restaurantApi.deleteRestaurant(deletingRestaurantId);
+      addToast('Restaurant Deleted', `${deletingRestaurantName} has been removed.`, 'info');
+      setIsDeleteRestaurantModalOpen(false);
+      setDeletingRestaurantId(null);
+      fetchAllRestaurants();
+      fetchDashboard();
+    } catch (err) {
+      addToast('Error', 'Failed to delete restaurant.', 'error');
+    } finally {
+      setIsDeletingRestaurant(false);
     }
   };
 
@@ -106,18 +149,7 @@ export default function Dashboard() {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="text-center py-16 bg-white rounded-3xl border border-neutral-200 p-8 space-y-4">
-        <UserCheck className="w-12 h-12 text-neutral-300 mx-auto" />
-        <h2 className="text-xl font-bold text-neutral-800">Authentication Required</h2>
-        <p className="text-xs text-neutral-500">Please log in to view your personal foodie dashboard.</p>
-        <Link to="/login" className="inline-block px-5 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-bold">
-          Log In Now
-        </Link>
-      </div>
-    );
-  }
+  if (!user) return null; // ProtectedRoute handles redirect
 
   const stats = dashboardData?.stats || {
     totalFavorites: user.favorites?.length || 0,
@@ -349,6 +381,122 @@ export default function Dashboard() {
             {isSubmitting ? 'Creating...' : 'Save Restaurant'}
           </button>
         </form>
+      </Modal>
+
+      {/* ── Admin: All Restaurants Management Table ── */}
+      {user.role === 'admin' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-[#222222]">Manage All Restaurants</h2>
+              <p className="text-xs text-[#717171]">Admin controls — edit or remove any listing</p>
+            </div>
+            <span className="flex items-center gap-1 px-2.5 py-1 bg-[#FF385C]/10 text-[#FF385C] font-bold text-[10px] rounded-md">
+              <Shield className="w-3 h-3" /> Admin Panel
+            </span>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-[#DDDDDD] overflow-hidden">
+            {isLoadingRestaurants ? (
+              <div className="p-8 space-y-3 animate-pulse">
+                {[1, 2, 3].map((n) => <div key={n} className="h-12 bg-[#EBEBEB] rounded-xl" />)}
+              </div>
+            ) : allRestaurants.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-[#EBEBEB] bg-[#F7F7F7]">
+                      <th className="px-5 py-3 text-left font-bold text-[#222222] uppercase tracking-wider">Restaurant</th>
+                      <th className="px-4 py-3 text-left font-bold text-[#222222] uppercase tracking-wider hidden sm:table-cell">Category</th>
+                      <th className="px-4 py-3 text-left font-bold text-[#222222] uppercase tracking-wider hidden md:table-cell">Price</th>
+                      <th className="px-4 py-3 text-left font-bold text-[#222222] uppercase tracking-wider hidden lg:table-cell">Rating</th>
+                      <th className="px-4 py-3 text-right font-bold text-[#222222] uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#EBEBEB]">
+                    {allRestaurants.map((restaurant) => (
+                      <tr key={restaurant._id} className="hover:bg-[#F7F7F7] transition-colors">
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={restaurant.images?.[0] || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=100&auto=format&fit=crop&q=80'}
+                              alt={restaurant.name}
+                              className="w-9 h-9 rounded-xl object-cover border border-[#DDDDDD] shrink-0"
+                            />
+                            <div>
+                              <p className="font-bold text-[#222222] leading-tight">{restaurant.name}</p>
+                              <p className="text-[#717171] text-[10px] truncate max-w-[160px]">{restaurant.address}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5 hidden sm:table-cell text-[#717171]">{restaurant.category || restaurant.cuisine}</td>
+                        <td className="px-4 py-3.5 hidden md:table-cell font-semibold text-[#222222]">{restaurant.priceRange || '$$'}</td>
+                        <td className="px-4 py-3.5 hidden lg:table-cell">
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3.5 h-3.5 fill-[#222222] text-[#222222]" />
+                            <span className="font-semibold text-[#222222]">{restaurant.averageRating || '4.8'}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              to={`/restaurants/${restaurant._id}`}
+                              className="p-1.5 rounded-lg text-[#717171] hover:text-[#222222] hover:bg-[#EBEBEB] transition"
+                              title="View & Edit"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Link>
+                            <button
+                              onClick={() => confirmDeleteRestaurant(restaurant._id, restaurant.name)}
+                              className="p-1.5 rounded-lg text-[#717171] hover:text-[#FF385C] hover:bg-[#FFF0F0] transition cursor-pointer"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-8 text-center space-y-2">
+                <Utensils className="w-8 h-8 text-[#DDDDDD] mx-auto" />
+                <p className="text-xs text-[#717171]">No restaurants found.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Restaurant Confirmation Modal ── */}
+      <Modal
+        isOpen={isDeleteRestaurantModalOpen}
+        onClose={() => setIsDeleteRestaurantModalOpen(false)}
+        title="Delete Restaurant"
+      >
+        <div className="space-y-5">
+          <p className="text-sm text-[#717171]">
+            Are you sure you want to permanently delete{' '}
+            <span className="font-bold text-[#222222]">{deletingRestaurantName}</span>? This action cannot be undone.
+          </p>
+          <div className="flex items-center justify-end gap-3">
+            <button
+              onClick={() => setIsDeleteRestaurantModalOpen(false)}
+              className="px-4 py-2 border border-[#DDDDDD] text-[#222222] text-xs font-semibold rounded-xl hover:bg-[#F7F7F7] transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteRestaurant}
+              disabled={isDeletingRestaurant}
+              className="px-4 py-2 bg-[#FF385C] text-white text-xs font-bold rounded-xl hover:bg-[#E00B41] transition cursor-pointer disabled:opacity-60"
+            >
+              {isDeletingRestaurant ? 'Deleting...' : 'Delete Restaurant'}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
