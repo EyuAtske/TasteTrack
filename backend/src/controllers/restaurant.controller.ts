@@ -27,14 +27,50 @@ const buildImageUrls = (req: Request): string[] => {
     );
 };
 
-//  Pagination added
+// Pagination + Filter added
 export const getRestaurants = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { page, limit, skip } = getPagination(req);
+        const { search, category, priceRange, location } = req.query;
+
+        const filter: Record<string, unknown> = {};
+
+        if (category && typeof category === 'string' && category !== 'All') {
+            filter.category = new RegExp(`^${category.trim()}$`, 'i');
+        }
+
+        if (priceRange && typeof priceRange === 'string' && priceRange !== 'All') {
+            filter.priceRange = priceRange;
+        }
+
+        const searchConditions = [];
+
+        if (typeof search === 'string' && search.trim()) {
+            const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const searchRegex = new RegExp(escaped, 'i');
+            searchConditions.push(
+                { name: searchRegex },
+                { cuisine: searchRegex },
+                { description: searchRegex },
+                { address: searchRegex },
+                { category: searchRegex }
+            );
+        }
+
+        if (typeof location === 'string' && location.trim() && location !== 'Anywhere') {
+            const escapedLoc = location.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const locRegex = new RegExp(escapedLoc, 'i');
+            // Check if address matches location
+            filter.address = locRegex;
+        }
+
+        if (searchConditions.length > 0) {
+            filter.$or = searchConditions;
+        }
 
         const [restaurants, total] = await Promise.all([
-            Restaurant.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
-            Restaurant.countDocuments(),
+            Restaurant.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Restaurant.countDocuments(filter),
         ]);
 
         res.status(200).json({
@@ -44,6 +80,7 @@ export const getRestaurants = async (req: Request, res: Response, next: NextFunc
             totalPages: Math.ceil(total / limit),
             currentPage: page,
             data: restaurants,
+            restaurants: restaurants,
         });
     } catch (error) {
         next(error);
@@ -144,6 +181,8 @@ export const searchRestaurants = async (req: Request, res: Response, next: NextF
                 { name: searchRegex },
                 { cuisine: searchRegex },
                 { description: searchRegex },
+                { address: searchRegex },
+                { category: searchRegex },
             ],
         };
 
