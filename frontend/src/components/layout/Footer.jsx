@@ -44,7 +44,7 @@ export default function Footer() {
           {/* Col 4 */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-[#FF385C] font-extrabold text-base">
-              <UtensilsCrossed className="w-5 h-5 stroke-[2.5]" />
+              <img src="/TasteTrackLogo.png" alt="TasteTrack Logo" className="h-6 w-auto object-contain" />
               <span>TasteTrack</span>
             </div>
             <p className="text-xs text-[#717171] leading-relaxed">

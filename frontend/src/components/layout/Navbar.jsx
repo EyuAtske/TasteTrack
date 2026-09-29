@@ -32,9 +32,11 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20">
           {/* Left: Brand Logo in Airbnb Coral #FF385C */}
           <Link to="/" className="flex items-center gap-2 group cursor-pointer shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-[#FF385C] flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform duration-200">
-              <UtensilsCrossed className="w-5 h-5 stroke-[2.5]" />
-            </div>
+            <img
+              src="/TasteTrackLogo.png"
+              alt="TasteTrack Logo"
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-200"
+            />
             <span className="font-extrabold text-xl tracking-tight text-[#FF385C]">
               TasteTrack
             </span>

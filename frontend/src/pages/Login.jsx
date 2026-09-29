@@ -52,9 +52,7 @@ export default function Login() {
         <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-900/40 to-transparent" />
 
         <div className="relative z-10 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center text-white shadow-lg">
-            <UtensilsCrossed className="w-4 h-4" />
-          </div>
+          <img src="/TasteTrackLogo.png" alt="TasteTrack Logo" className="h-8 w-auto object-contain" />
           <span className="font-extrabold text-lg tracking-tight text-white">TasteTrack</span>
         </div>
 
