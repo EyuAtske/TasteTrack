@@ -22,6 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import RatingStars from '../components/RatingStars';
 import Modal from '../components/Modal';
+import ImageUploadInput from '../components/ImageUploadInput';
 
 export default function RestaurantDetails() {
   const { id } = useParams();
@@ -55,10 +56,6 @@ export default function RestaurantDetails() {
   const [isDeleteRestaurantModalOpen, setIsDeleteRestaurantModalOpen] = useState(false);
   const [isDeletingRestaurant, setIsDeletingRestaurant] = useState(false);
 
-  useEffect(() => {
-    fetchRestaurantAndReviews();
-  }, [id]);
-
   const fetchRestaurantAndReviews = async () => {
     setIsLoading(true);
     try {
@@ -86,6 +83,10 @@ export default function RestaurantDetails() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchRestaurantAndReviews();
+  }, [id]);
 
   const isFavorite = user?.favorites?.includes(String(id));
   const isAdmin = user?.role === 'admin';
@@ -191,19 +192,24 @@ export default function RestaurantDetails() {
     e.preventDefault();
     setIsSavingRestaurant(true);
     try {
-      await restaurantApi.updateRestaurant(id, {
-        name: editRestaurantForm.name,
-        description: editRestaurantForm.description,
-        category: editRestaurantForm.category,
-        cuisine: editRestaurantForm.cuisine,
-        priceRange: editRestaurantForm.priceRange,
-        address: editRestaurantForm.address,
-        openingHours: editRestaurantForm.openingHours,
-        contact: {
-          phone: editRestaurantForm.phone,
-          website: editRestaurantForm.website,
-        },
-      });
+      const submitData = new FormData();
+      submitData.append('name', editRestaurantForm.name);
+      submitData.append('description', editRestaurantForm.description);
+      submitData.append('category', editRestaurantForm.category);
+      submitData.append('cuisine', editRestaurantForm.cuisine);
+      submitData.append('priceRange', editRestaurantForm.priceRange);
+      submitData.append('address', editRestaurantForm.address);
+      submitData.append('openingHours', editRestaurantForm.openingHours);
+      submitData.append('phone', editRestaurantForm.phone || '');
+      submitData.append('website', editRestaurantForm.website || '');
+
+      if (editRestaurantForm.imageFiles && editRestaurantForm.imageFiles.length > 0) {
+        editRestaurantForm.imageFiles.forEach((file) => {
+          submitData.append('images', file);
+        });
+      }
+
+      await restaurantApi.updateRestaurant(id, submitData);
       addToast('Restaurant Updated!', `${editRestaurantForm.name} details saved.`, 'success');
       setIsEditRestaurantModalOpen(false);
       fetchRestaurantAndReviews();
@@ -683,6 +689,14 @@ export default function RestaurantDetails() {
               />
             </div>
           </div>
+
+          <ImageUploadInput
+            multiple={true}
+            maxFiles={5}
+            initialImages={restaurant?.images || []}
+            label="Upload New Photos (Appends to gallery)"
+            onChange={(files) => setEditRestaurantForm({ ...editRestaurantForm, imageFiles: files })}
+          />
 
           <button
             type="submit"

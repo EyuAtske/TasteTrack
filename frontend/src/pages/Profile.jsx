@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { User, Mail, Image, Key, ShieldCheck, Heart, Save } from 'lucide-react';
+import { User, Save } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import ImageUploadInput from '../components/ImageUploadInput';
 
 export default function Profile() {
   const { user, updateUserProfile } = useAuth();
@@ -103,21 +104,19 @@ export default function Profile() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">
-                Profile Image URL
-              </label>
-              <div className="relative">
-                <Image className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                <input
-                  type="url"
-                  value={profileImage}
-                  onChange={(e) => setProfileImage(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-rose-500"
-                  placeholder="https://images.unsplash.com/..."
-                />
-              </div>
-            </div>
+            <ImageUploadInput
+              multiple={false}
+              initialImages={profileImage ? [profileImage] : []}
+              label="Profile Avatar Photo"
+              onChange={(fileOrFiles) => {
+                if (fileOrFiles) {
+                  const file = Array.isArray(fileOrFiles) ? fileOrFiles[0] : fileOrFiles;
+                  if (file instanceof File) {
+                    setProfileImage(URL.createObjectURL(file));
+                  }
+                }
+              }}
+            />
 
             <div>
               <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">

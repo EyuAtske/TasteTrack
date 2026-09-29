@@ -18,6 +18,7 @@ import { dashboardApi } from '../api/dashboardApi';
 import { restaurantApi } from '../api/restaurantApi';
 import RestaurantCard from '../components/RestaurantCard';
 import Modal from '../components/Modal';
+import ImageUploadInput from '../components/ImageUploadInput';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -110,22 +111,24 @@ export default function Dashboard() {
 
     setIsSubmitting(true);
     try {
-      const res = await restaurantApi.createRestaurant({
-        name: formData.name,
-        description: formData.description,
-        category: formData.category,
-        cuisine: formData.cuisine,
-        priceRange: formData.priceRange,
-        address: formData.address,
-        images: formData.imageUrl ? [formData.imageUrl] : [
-          'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
-        ],
-        contact: {
-          phone: formData.phone,
-          website: formData.website,
-        },
-        openingHours: formData.openingHours,
-      });
+      const submitData = new FormData();
+      submitData.append('name', formData.name);
+      submitData.append('description', formData.description);
+      submitData.append('category', formData.category);
+      submitData.append('cuisine', formData.cuisine);
+      submitData.append('priceRange', formData.priceRange);
+      submitData.append('address', formData.address);
+      submitData.append('phone', formData.phone);
+      submitData.append('website', formData.website);
+      submitData.append('openingHours', formData.openingHours);
+
+      if (formData.imageFiles && formData.imageFiles.length > 0) {
+        formData.imageFiles.forEach((file) => {
+          submitData.append('images', file);
+        });
+      }
+
+      await restaurantApi.createRestaurant(submitData);
 
       addToast('Success!', `${formData.name} was added to TasteTrack!`, 'success');
       setIsAddModalOpen(false);
@@ -136,7 +139,7 @@ export default function Dashboard() {
         cuisine: 'Italian',
         priceRange: '$$',
         address: '',
-        imageUrl: '',
+        imageFiles: [],
         phone: '',
         website: '',
         openingHours: 'Mon-Sun: 11:30 AM - 10:00 PM',
@@ -360,18 +363,12 @@ export default function Dashboard() {
             />
           </div>
 
-          <div>
-            <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">
-              Image URL
-            </label>
-            <input
-              type="url"
-              placeholder="https://images.unsplash.com/..."
-              value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-              className="w-full px-3.5 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-rose-500"
-            />
-          </div>
+          <ImageUploadInput
+            multiple={true}
+            maxFiles={5}
+            label="Upload Restaurant Photos"
+            onChange={(files) => setFormData({ ...formData, imageFiles: files })}
+          />
 
           <button
             type="submit"
