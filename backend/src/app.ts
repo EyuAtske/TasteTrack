@@ -35,4 +35,20 @@ app.get("/", (_, res) => {
     res.json({ message: "TasteTrack API is running" });
 });
 
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error(err);
+
+    if (err.name === "ValidationError") {
+        return res.status(400).json({
+            success: false,
+            message: "Validation failed",
+        });
+    }
+
+    return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+    });
+});
+
 export default app;

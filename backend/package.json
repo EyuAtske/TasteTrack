@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "seed:admin": "ts-node-dev --transpile-only src/seed/seedAdmin.ts",
+    "seed:restaurants": "ts-node-dev --transpile-only src/seed/seedRestaurants.ts"
   },
   "keywords": [],
   "author": "",

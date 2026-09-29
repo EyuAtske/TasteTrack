@@ -8,10 +8,25 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+const getExtension = (mimetype: string) => {
+    switch (mimetype) {
+        case 'image/jpeg':
+            return '.jpg';
+        case 'image/png':
+            return '.png';
+        case 'image/webp':
+            return '.webp';
+        default:
+            return '';
+    }
+};
+
 const storage = multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, uploadDir),
     filename: (_req, file, cb) => {
-        const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
+        const extension = getExtension(file.mimetype);
+        const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`;
+
         cb(null, uniqueName);
     },
 });
