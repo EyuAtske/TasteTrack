@@ -39,7 +39,17 @@ export default function Home() {
   const [searchCuisine, setSearchCuisine] = useState('');
   const [searchPrice, setSearchPrice] = useState('All');
   const [isLoading, setIsLoading] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 60);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     fetchRestaurants();
@@ -60,7 +70,7 @@ export default function Home() {
   const handleAirbnbSearchSubmit = (e) => {
     e.preventDefault();
     const queryParams = new URLSearchParams();
-    if (searchLocation.trim()) queryParams.set('search', searchLocation.trim());
+    if (searchLocation.trim()) queryParams.set('location', searchLocation.trim());
     if (searchCuisine.trim()) queryParams.set('category', searchCuisine.trim());
     if (searchPrice !== 'All') queryParams.set('priceRange', searchPrice);
 
@@ -69,12 +79,16 @@ export default function Home() {
 
   return (
     <div className="space-y-10 text-[#222222]">
-      {/* Floating Airbnb Signature Search Bar Section */}
-      <section className="pt-2 pb-4 flex flex-col items-center">
+      {/* Floating Airbnb Signature Search Bar Section with Scroll Morphing Animation */}
+      <section className={`pt-2 pb-4 flex flex-col items-center transition-all duration-300 ease-out origin-top ${
+        isScrolled
+          ? 'opacity-0 scale-95 -translate-y-6 max-h-0 py-0 overflow-hidden pointer-events-none'
+          : 'opacity-100 scale-100 translate-y-0 max-h-40 pointer-events-auto'
+      }`}>
         {/* Airbnb Search Capsule */}
         <form
           onSubmit={handleAirbnbSearchSubmit}
-          className="w-full max-w-4xl bg-white rounded-full border border-[#DDDDDD] shadow-lg hover:shadow-xl transition-shadow duration-300 p-2 flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-[#EBEBEB]"
+          className="w-full max-w-4xl bg-white rounded-full border border-[#DDDDDD] shadow-lg hover:shadow-xl transition-all duration-300 p-2 flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-[#EBEBEB]"
         >
           {/* Segment 1: Location */}
           <div className="flex-1 w-full px-6 py-2 flex flex-col justify-center hover:bg-neutral-100/70 rounded-full transition cursor-pointer">
@@ -126,7 +140,7 @@ export default function Home() {
           <div className="p-1 w-full md:w-auto flex justify-end">
             <button
               type="submit"
-              className="w-12 h-12 rounded-full bg-[#FF385C] hover:bg-[#E00B41] text-white flex items-center justify-center transition-transform active:scale-95 shadow-md shrink-0 cursor-pointer"
+              className="w-12 h-12 rounded-full bg-[#FF385C] hover:bg-[#E00B41] text-white flex items-center justify-center transition-all duration-200 active:scale-95 shadow-md hover:shadow-lg shrink-0 cursor-pointer"
               title="Search restaurants"
             >
               <Search className="w-5 h-5 stroke-[2.5]" />

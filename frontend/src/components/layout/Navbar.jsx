@@ -19,13 +19,24 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
+  const isHomePage = location.pathname === '/';
   const activeLocation = searchParams.get('location') || 'Anywhere';
   const activeCategory = searchParams.get('category') || 'Any cuisine';
   const activeKeyword = searchParams.get('search');
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 60);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -33,9 +44,12 @@ export default function Navbar() {
     navigate('/');
   };
 
+  // Determine navbar search capsule visibility
+  const showNavSearch = !isHomePage || isScrolled;
+
   return (
     <>
-      <header className="sticky top-0 z-40 w-full bg-white border-b border-[#EBEBEB] text-[#222222]">
+      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-[#EBEBEB] text-[#222222] transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Left: Brand Logo in Airbnb Coral #FF385C */}
@@ -51,25 +65,31 @@ export default function Navbar() {
             </Link>
 
             {/* Center: Airbnb Interactive Compact Search Capsule */}
-            <button
-              onClick={() => setIsSearchModalOpen(true)}
-              className="hidden md:flex items-center gap-3 px-4 py-2.5 rounded-full border border-[#DDDDDD] shadow-xs hover:shadow-md transition duration-200 cursor-pointer text-xs font-semibold bg-white"
-            >
-              <span className={`truncate max-w-[120px] ${activeLocation !== 'Anywhere' ? 'text-[#FF385C] font-extrabold' : 'text-[#222222]'}`}>
-                {activeLocation}
-              </span>
-              <span className="w-1 h-1 rounded-full bg-[#DDDDDD]" />
-              <span className={`truncate max-w-[110px] ${activeCategory !== 'Any cuisine' ? 'text-[#FF385C] font-extrabold' : 'text-[#222222]'}`}>
-                {activeCategory}
-              </span>
-              <span className="w-1 h-1 rounded-full bg-[#DDDDDD]" />
-              <span className="text-[#717171] truncate max-w-[120px]">
-                {activeKeyword ? `"${activeKeyword}"` : 'Search spots'}
-              </span>
-              <div className="w-7 h-7 rounded-full bg-[#FF385C] text-white flex items-center justify-center ml-1 shrink-0">
-                <Search className="w-3.5 h-3.5 stroke-[3]" />
-              </div>
-            </button>
+            <div className={`transition-all duration-300 ease-out ${
+              showNavSearch
+                ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 scale-90 -translate-y-2 pointer-events-none'
+            }`}>
+              <button
+                onClick={() => setIsSearchModalOpen(true)}
+                className="hidden md:flex items-center gap-3 px-4 py-2.5 rounded-full border border-[#DDDDDD] shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer text-xs font-semibold bg-white hover:scale-105 active:scale-95"
+              >
+                <span className={`truncate max-w-[120px] ${activeLocation !== 'Anywhere' ? 'text-[#FF385C] font-extrabold' : 'text-[#222222]'}`}>
+                  {activeLocation}
+                </span>
+                <span className="w-1 h-1 rounded-full bg-[#DDDDDD]" />
+                <span className={`truncate max-w-[110px] ${activeCategory !== 'Any cuisine' ? 'text-[#FF385C] font-extrabold' : 'text-[#222222]'}`}>
+                  {activeCategory}
+                </span>
+                <span className="w-1 h-1 rounded-full bg-[#DDDDDD]" />
+                <span className="text-[#717171] truncate max-w-[120px]">
+                  {activeKeyword ? `"${activeKeyword}"` : 'Search spots'}
+                </span>
+                <div className="w-7 h-7 rounded-full bg-[#FF385C] text-white flex items-center justify-center ml-1 shrink-0 shadow-xs">
+                  <Search className="w-3.5 h-3.5 stroke-[3]" />
+                </div>
+              </button>
+            </div>
 
           {/* Right: Actions & User Capsule Pill */}
           <div className="flex items-center gap-3">

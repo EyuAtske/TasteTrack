@@ -43,12 +43,12 @@ export default function RestaurantCard({ restaurant }) {
         {/* Favorite Bookmark Button */}
         <button
           onClick={handleFavoriteClick}
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-xs hover:bg-white flex items-center justify-center text-[#222222] transition cursor-pointer shadow-sm hover:scale-110 active:scale-95"
+          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-xs hover:bg-white flex items-center justify-center text-[#222222] transition-all cursor-pointer shadow-xs hover:scale-110 active:scale-125"
           title={isFavorite ? 'Remove from wishlist' : 'Save to wishlist'}
         >
           <Heart
-            className={`w-4 h-4 transition-colors ${
-              isFavorite ? 'fill-[#FF385C] text-[#FF385C]' : 'text-[#222222] hover:text-[#FF385C]'
+            className={`w-4 h-4 transition-all duration-200 ${
+              isFavorite ? 'fill-[#FF385C] text-[#FF385C] scale-110' : 'text-[#222222] hover:text-[#FF385C]'
             }`}
           />
         </button>
