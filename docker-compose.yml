@@ -32,6 +32,8 @@ services:
       - ./frontend:/app
       - /app/node_modules
     restart: unless-stopped
+    environment:
+      - VITE_PROXY_TARGET=http://backend:5000
 
   mongo:
     image: mongo:8
