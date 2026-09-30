@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
+import fs from 'fs';
+import path from 'path';
 import Restaurant from '../models/restaurant.model';
 
 const getPagination = (req: Request) => {
@@ -22,8 +24,11 @@ const getPagination = (req: Request) => {
 // Builds public URLs from uploaded files
 const buildImageUrls = (req: Request): string[] => {
     if (!req.files || !Array.isArray(req.files)) return [];
+    // Use a fixed public URL: behind the Vite/Docker proxy, req.get('host') is
+    // the internal name (backend:5000), which the browser cannot open.
+    const publicUrl = (process.env.PUBLIC_URL || 'http://localhost:5000').replace(/\/$/, '');
     return (req.files as Express.Multer.File[]).map(
-        (file) => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`
+        (file) => `${publicUrl}/uploads/${file.filename}`
     );
 };
 
@@ -101,19 +106,56 @@ export const getRestaurantById = async (req: Request, res: Response, next: NextF
     }
 };
 
+// Accepts contact as an object (JSON) or as flat phone/website fields (multipart forms)
+const normalizeBody = (body: Record<string, any>) => {
+    const { phone, website, ...rest } = body;
+    if (phone !== undefined || website !== undefined) {
+        const base = rest.contact && typeof rest.contact === 'object' ? rest.contact : {};
+        rest.contact = { ...base, phone: phone ?? base.phone, website: website ?? base.website };
+    }
+    return rest;
+};
+
 // Handles uploaded images
 export const createRestaurant = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        console.log("BODY:", req.body);
+        const body = normalizeBody(req.body);
         const uploadedImages = buildImageUrls(req);
         const restaurant = await Restaurant.create({
-            ...req.body,
-            images: uploadedImages.length > 0 ? uploadedImages : req.body.images ?? [],
+            ...body,
+            images: uploadedImages.length > 0 ? uploadedImages : body.images ?? [],
         });
         res.status(201).json({ success: true, data: restaurant });
     } catch (error) {
         next(error);
     }
+};
+
+// Parse the list of image URLs the admin removed in the edit form
+// (sent as a JSON string, or as a repeated field, in multipart requests)
+const parseRemovedImages = (value: unknown): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter((v): v is string => typeof v === 'string');
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value);
+            if (Array.isArray(parsed)) return parsed.filter((v): v is string => typeof v === 'string');
+        } catch {
+            return [value];
+        }
+    }
+    return [];
+};
+
+// Delete a removed image file from disk (only files inside the uploads folder)
+const deleteImageFile = (url: string) => {
+    const marker = '/uploads/';
+    const idx = url.indexOf(marker);
+    if (idx === -1) return; // external image (e.g. Unsplash): nothing on disk
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    const filePath = path.normalize(path.join(uploadsDir, url.slice(idx + marker.length)));
+    if (!filePath.startsWith(uploadsDir + path.sep)) return; // path safety
+    fs.promises.unlink(filePath).catch(() => { /* already gone */ });
 };
 
 //  Invalid ID check + appends new images
@@ -125,17 +167,24 @@ export const updateRestaurant = async (req: Request, res: Response, next: NextFu
         const existing = await Restaurant.findById(req.params.id);
         if (!existing) return res.status(404).json({ success: false, message: 'Restaurant not found' });
 
+        const { removedImages, ...body } = normalizeBody(req.body);
+        const removed = parseRemovedImages(removedImages);
         const uploadedImages = buildImageUrls(req);
+
+        // keep the existing photos the admin did not remove
+        const keptImages = existing.images.filter((img) => !removed.includes(img));
+        // newest upload becomes the cover photo; removals are applied even without uploads
+        const images = [...uploadedImages, ...keptImages];
+
         const restaurant = await Restaurant.findByIdAndUpdate(
             req.params.id,
-            {
-                ...req.body,
-                images: uploadedImages.length > 0
-                    ? [...existing.images, ...uploadedImages]
-                    : req.body.images ?? existing.images,
-            },
+            { ...body, images },
             { new: true, runValidators: true }
         );
+
+        // clean up the removed files from disk once the database update succeeded
+        existing.images.filter((img) => removed.includes(img)).forEach(deleteImageFile);
+
         res.status(200).json({ success: true, data: restaurant });
     } catch (error) {
         next(error);

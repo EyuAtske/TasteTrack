@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import fs from "fs";
+import path from "path";
 import mongoose from "mongoose";
 import Restaurant from "../models/restaurant.model";
 
@@ -50,7 +52,7 @@ const restaurants = [
     cuisine: "Italian",
     priceRange: "$$",
     images: IMG.Italian,
-    contact: "+251 90 560 4444",
+    contact: { phone: "+251 90 560 4444" },
     openingHours: "Mon-Sun 8:30 AM - 10:00 PM (Wed until 10:30 PM)",
     latitude: 8.995234,
     longitude: 38.7674019,
@@ -64,7 +66,7 @@ const restaurants = [
     cuisine: "Italian",
     priceRange: "$$",
     images: IMG.Italian,
-    contact: "+251 98 750 5154",
+    contact: { phone: "+251 98 750 5154" },
     openingHours: "Mon-Fri 12:00 PM - 9:00 PM, Sat-Sun 12:00 PM - 10:00 PM",
     latitude: 9.0043014,
     longitude: 38.7704031,
@@ -78,7 +80,7 @@ const restaurants = [
     cuisine: "Italian Pizza",
     priceRange: "$$$",
     images: IMG.Italian,
-    contact: "+251 99 116 2244",
+    contact: { phone: "+251 99 116 2244" },
     openingHours: "Tue-Sun 12:00 PM - 10:00 PM (Closed Mon)",
     latitude: 8.9985031,
     longitude: 38.7610273,
@@ -94,7 +96,7 @@ const restaurants = [
     cuisine: "Japanese Sushi",
     priceRange: "$$$$",
     images: IMG.Japanese,
-    contact: "+251 90 117 1819",
+    contact: { phone: "+251 90 117 1819" },
     openingHours:
       "Mon 6:00 PM - 11:00 PM; Tue-Sun 8:00-10:30 AM, 12:00-3:30 PM, 6:00-11:00 PM",
     latitude: 8.9920451,
@@ -109,7 +111,7 @@ const restaurants = [
     cuisine: "Japanese Fusion",
     priceRange: "$$$$",
     images: IMG.Japanese,
-    contact: "+251 98 683 3333",
+    contact: { phone: "+251 98 683 3333" },
     openingHours:
       "Mon 6:00-11:00 PM; Tue-Sat 12:00-3:00 PM & 6:00-11:00 PM; Sun 11:00 AM-3:00 PM & 6:00-11:00 PM",
     latitude: 9.0255248,
@@ -124,7 +126,7 @@ const restaurants = [
     cuisine: "Japanese",
     priceRange: "$$",
     images: IMG.Japanese,
-    contact: "+251 98 487 3551",
+    contact: { phone: "+251 98 487 3551" },
     openingHours: "Mon-Sat 11:00 AM - 2:30 PM & 5:00 PM - 9:00 PM (Closed Sun)",
     latitude: 8.9864932,
     longitude: 38.7757714,
@@ -140,7 +142,7 @@ const restaurants = [
     cuisine: "Texas BBQ",
     priceRange: "$$$$",
     images: IMG.BBQ,
-    contact: "+251 98 609 1656",
+    contact: { phone: "+251 98 609 1656" },
     openingHours: "Mon-Sun 9:00 AM - 11:00 PM",
     latitude: 8.9910009,
     longitude: 38.7788992,
@@ -154,7 +156,7 @@ const restaurants = [
     cuisine: "Grill",
     priceRange: "$$$",
     images: IMG.BBQ,
-    contact: "+251 90 588 8888",
+    contact: { phone: "+251 90 588 8888" },
     openingHours: "Hours not listed",
     latitude: 9.0029746,
     longitude: 38.7793106,
@@ -168,7 +170,7 @@ const restaurants = [
     cuisine: "Grill & Lounge",
     priceRange: "$$$",
     images: IMG.BBQ,
-    contact: "+251 90 811 1161",
+    contact: { phone: "+251 90 811 1161" },
     openingHours: "Mon-Sun 12:00 PM - 2:30 AM",
     latitude: 8.9990776,
     longitude: 38.7737926,
@@ -184,7 +186,7 @@ const restaurants = [
     cuisine: "Ethiopian Vegan",
     priceRange: "$",
     images: IMG.Vegan,
-    contact: "+251 91 191 0671",
+    contact: { phone: "+251 91 191 0671" },
     openingHours: "Mon-Sun 8:00 AM - 9:00 PM",
     latitude: 8.9995488,
     longitude: 38.7862196,
@@ -198,7 +200,7 @@ const restaurants = [
     cuisine: "Vegetarian & Juice Bar",
     priceRange: "$",
     images: IMG.Vegan,
-    contact: "",
+    contact: { phone: "" },
     openingHours: "Mon-Sun 7:00 AM - 9:30 PM",
     latitude: 8.9995429,
     longitude: 38.7848235,
@@ -214,7 +216,7 @@ const restaurants = [
     cuisine: "Steakhouse",
     priceRange: "$$$$",
     images: IMG["Fine Dining"],
-    contact: "+251 92 944 6238",
+    contact: { phone: "+251 92 944 6238" },
     openingHours: "Mon-Sun 12:00-3:00 PM & 6:00-10:00 PM",
     latitude: 8.9944837,
     longitude: 38.7852396,
@@ -228,7 +230,7 @@ const restaurants = [
     cuisine: "Contemporary Fusion",
     priceRange: "$$$",
     images: IMG["Fine Dining"],
-    contact: "+251 98 355 5556",
+    contact: { phone: "+251 98 355 5556" },
     openingHours: "Mon-Thu 6:00 PM - 12:00 AM, Fri-Sat 6:00 PM - 2:00 AM (Closed Sun)",
     latitude: 9.0008649,
     longitude: 38.7818844,
@@ -242,7 +244,7 @@ const restaurants = [
     cuisine: "Contemporary International",
     priceRange: "$$$$",
     images: IMG["Fine Dining"],
-    contact: "+251 98 989 0102",
+    contact: { phone: "+251 98 989 0102" },
     openingHours: "Mon-Tue, Thu-Sun 12:00 PM - 10:30 PM (Closed Wed)",
     latitude: 8.9919165,
     longitude: 38.779167,
@@ -258,7 +260,7 @@ const restaurants = [
     cuisine: "Specialty Coffee",
     priceRange: "$$",
     images: IMG.Cafes,
-    contact: "+251 98 412 1212",
+    contact: { phone: "+251 98 412 1212" },
     openingHours: "Mon-Sun 7:00 AM - 10:00 PM",
     latitude: 8.9874188,
     longitude: 38.7767951,
@@ -272,7 +274,7 @@ const restaurants = [
     cuisine: "Ethiopian Coffee",
     priceRange: "$",
     images: IMG.Cafes,
-    contact: "+251 96 680 8182",
+    contact: { phone: "+251 96 680 8182" },
     openingHours: "Mon-Sun 7:00 AM - 8:00 PM",
     latitude: 9.0008031,
     longitude: 38.7673735,
@@ -286,7 +288,7 @@ const restaurants = [
     cuisine: "Ethiopian Coffee",
     priceRange: "$",
     images: IMG.Cafes,
-    contact: "+251 90 115 2222",
+    contact: { phone: "+251 90 115 2222" },
     openingHours: "Hours not listed",
     latitude: 8.9943212,
     longitude: 38.790897,
@@ -309,6 +311,64 @@ const OLD_FICTIONAL_NAMES = [
   "Merkato Roasters",
 ];
 
+const IMAGE_PREFIX: Record<string, string> = {
+  "The Alchemist Dine & Wine": "alchemist",
+  "Bete Aurael": "bete",
+  "Cprem Gastronomy and Mixology": "cprem",
+  "The Exclusive Restaurant": "exclusive",
+  "Fitsum Shiro Bet": "fistum", // matches your file names (fistum*.webp)
+  "Korma Grill": "korma",
+  "Tomoca Coffee": "tomoca",
+  "Toro Grill and Lounge": "toro",
+  "Wild Coffee (Gazebo Square)": "wild",
+  "YeGesha Specialty Cafe & Roastery": "yegesha",
+  // add more as you prepare photos, e.g.  "Matsuki": "matsuki",
+};
+
+const SEED_IMAGES_DIR = path.join(process.cwd(), "seed-images");
+const UPLOADS_SEED_DIR = path.join(process.cwd(), "uploads", "seed");
+const PUBLIC_URL = (process.env.PUBLIC_URL || "http://localhost:5000").replace(/\/$/, "");
+const IMAGE_EXT = /\.(jpe?g|png|webp)$/i;
+
+const slugify = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+function localImagesFor(name: string): string[] {
+  if (!fs.existsSync(SEED_IMAGES_DIR)) return [];
+
+  const prefix = (IMAGE_PREFIX[name] || slugify(name)).toLowerCase();
+  // "toro", "toro 2", "toro-2", "toro_2"  (case-insensitive)
+  const pattern = new RegExp(`^${escapeRegex(prefix)}(?:[\\s_-]*(\\d+))?$`, "i");
+
+  const matches = fs
+    .readdirSync(SEED_IMAGES_DIR)
+    .filter((f) => IMAGE_EXT.test(f))
+    .map((f) => {
+      const m = f.replace(IMAGE_EXT, "").trim().match(pattern);
+      return m ? { file: f, order: m[1] ? parseInt(m[1], 10) : 1 } : null;
+    })
+    .filter((x): x is { file: string; order: number } => x !== null)
+    .sort((a, b) => a.order - b.order || a.file.localeCompare(b.file));
+
+  if (matches.length === 0) return [];
+  fs.mkdirSync(UPLOADS_SEED_DIR, { recursive: true });
+
+  const restaurantSlug = slugify(name);
+  return matches.map(({ file }, i) => {
+    // clean, URL-safe file name (no spaces / capitals): <restaurant-slug>-<n>.<ext>
+    const ext = path.extname(file).toLowerCase();
+    const cleanName = `${restaurantSlug}-${i + 1}${ext}`;
+    fs.copyFileSync(path.join(SEED_IMAGES_DIR, file), path.join(UPLOADS_SEED_DIR, cleanName));
+    return `${PUBLIC_URL}/uploads/seed/${cleanName}`;
+  });
+}
+
 async function seedRestaurants() {
   if (!process.env.MONGO_URI) {
     throw new Error("Missing required environment variable: MONGO_URI");
@@ -326,13 +386,19 @@ async function seedRestaurants() {
 
   let created = 0;
   let updated = 0;
+  let withPhotos = 0;
+  const missingPhotos: string[] = [];
 
   for (const r of restaurants) {
     // Match on name so re-running never creates duplicates.
     // averageRating is not touched, so ratings computed from real reviews are kept.
+    const local = localImagesFor(r.name);
+    if (local.length > 0) withPhotos++;
+    else missingPhotos.push(r.name);
+
     const result = await Restaurant.updateOne(
       { name: r.name },
-      { $set: { ...r, images: [...r.images] } },
+      { $set: { ...r, images: local.length > 0 ? local : [...r.images] } },
       { upsert: true }
     );
 
@@ -343,6 +409,10 @@ async function seedRestaurants() {
   console.log(
     `Restaurants seeded: ${created} created, ${updated} already existed (refreshed).`
   );
+  console.log(`${withPhotos}/${restaurants.length} restaurants use your own photos from seed-images/.`);
+  if (missingPhotos.length > 0) {
+    console.log("Using generic category images for: " + missingPhotos.join(", "));
+  }
 }
 
 seedRestaurants()

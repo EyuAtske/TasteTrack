@@ -51,6 +51,8 @@ export default function RestaurantDetails() {
   const [isEditRestaurantModalOpen, setIsEditRestaurantModalOpen] = useState(false);
   const [editRestaurantForm, setEditRestaurantForm] = useState({});
   const [isSavingRestaurant, setIsSavingRestaurant] = useState(false);
+  const [removedImages, setRemovedImages] = useState([]); // existing photo URLs marked for removal
+  const [editSession, setEditSession] = useState(0); // remounts the photo picker on each open
 
   // ── Delete Restaurant Confirmation (Admin) ──
   const [isDeleteRestaurantModalOpen, setIsDeleteRestaurantModalOpen] = useState(false);
@@ -60,8 +62,11 @@ export default function RestaurantDetails() {
     setIsLoading(true);
     try {
       const restData = await restaurantApi.getRestaurantById(id);
-      const rest = restData.restaurant || restData;
+      // Backend returns { success, data: restaurant }; mock mode returns { restaurant }
+      const rest = restData.restaurant || restData.data || restData;
       setRestaurant(rest);
+      setRemovedImages([]);
+      setSelectedImage(0);
       setEditRestaurantForm({
         name: rest.name || '',
         description: rest.description || '',
@@ -202,6 +207,7 @@ export default function RestaurantDetails() {
       submitData.append('openingHours', editRestaurantForm.openingHours);
       submitData.append('phone', editRestaurantForm.phone || '');
       submitData.append('website', editRestaurantForm.website || '');
+      submitData.append('removedImages', JSON.stringify(removedImages));
 
       if (editRestaurantForm.imageFiles && editRestaurantForm.imageFiles.length > 0) {
         editRestaurantForm.imageFiles.forEach((file) => {
@@ -280,7 +286,12 @@ export default function RestaurantDetails() {
               <Shield className="w-3 h-3" /> Admin Controls
             </span>
             <button
-              onClick={() => setIsEditRestaurantModalOpen(true)}
+              onClick={() => {
+                setRemovedImages([]);
+                setEditRestaurantForm((f) => ({ ...f, imageFiles: [] }));
+                setEditSession((n) => n + 1);
+                setIsEditRestaurantModalOpen(true);
+              }}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-[#222222] text-white text-xs font-semibold rounded-xl hover:bg-neutral-800 transition cursor-pointer"
             >
               <Pencil className="w-3.5 h-3.5" />
@@ -329,7 +340,9 @@ export default function RestaurantDetails() {
               <div className="px-4 py-2 bg-white/90 backdrop-blur-md text-[#222222] rounded-2xl flex items-center gap-2 shadow-lg">
                 <Star className="w-5 h-5 fill-[#222222] text-[#222222]" />
                 <div>
-                  <div className="text-sm font-black leading-none">{restaurant.averageRating || '4.8'}</div>
+                  <div className="text-sm font-black leading-none">
+                    {restaurant.averageRating ? Number(restaurant.averageRating).toFixed(1) : 'New'}
+                  </div>
                   <div className="text-[10px] text-[#717171] font-semibold mt-0.5">{reviews.length} reviews</div>
                 </div>
               </div>
@@ -461,7 +474,7 @@ export default function RestaurantDetails() {
                 <Clock className="w-4 h-4 text-[#717171] shrink-0 mt-0.5" />
                 <div>
                   <p className="font-bold">Opening Hours</p>
-                  <p className="text-[#717171] mt-0.5">{restaurant.openingHours || 'Mon-Sun: 11:30 AM - 10:00 PM'}</p>
+                  <p className="text-[#717171] mt-0.5">{restaurant.openingHours || 'Hours not listed'}</p>
                 </div>
               </div>
 
@@ -691,11 +704,15 @@ export default function RestaurantDetails() {
           </div>
 
           <ImageUploadInput
+            key={editSession}
             multiple={true}
             maxFiles={5}
             initialImages={restaurant?.images || []}
-            label="Upload New Photos (Appends to gallery)"
+            label="Photos (click × to remove, or upload new ones)"
             onChange={(files) => setEditRestaurantForm({ ...editRestaurantForm, imageFiles: files })}
+            onExistingChange={(kept) =>
+              setRemovedImages((restaurant?.images || []).filter((url) => !kept.includes(url)))
+            }
           />
 
           <button

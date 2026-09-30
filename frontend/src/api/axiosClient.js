@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: '/api', // Will be proxying to the backend
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,6 +13,15 @@ axiosClient.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // FormData (file uploads) must NOT be sent as JSON. With the default
+    // 'application/json' header, axios converts the FormData to JSON and the
+    // files are lost. Removing the header lets the browser set multipart/form-data.
+    if (config.data instanceof FormData) {
+      if (typeof config.headers.setContentType === 'function') {
+        config.headers.setContentType(undefined);
+      }
+      delete config.headers['Content-Type'];
     }
     return config;
   },
