@@ -4,12 +4,13 @@ import { Search, MapPin, Compass, Utensils, X, Navigation } from 'lucide-react';
 
 const POPULAR_LOCATIONS = [
   'Anywhere',
-  'Little Italy, NY',
-  'Midtown, NY',
-  'Brooklyn, NY',
-  'East Village, NY',
-  'SoHo, NY',
-  'Greenwich Village, NY',
+  'Bole',
+  'Addis Ababa',
+  'Gabon St',
+  'Atlas',
+  'Rwanda St',
+  'Brooklyn',
+  'Downtown',
 ];
 
 const CATEGORIES = [
@@ -63,26 +64,43 @@ export default function SearchModal({ isOpen, onClose }) {
     setIsLocating(true);
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          // Simulated reverse geocode for demo experience
-          setLocationInput('Near me');
-          setIsLocating(false);
+        async (pos) => {
+          try {
+            const { latitude, longitude } = pos.coords;
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            );
+            const data = await res.json();
+            const realCity =
+              data?.address?.city ||
+              data?.address?.town ||
+              data?.address?.suburb ||
+              data?.address?.neighbourhood ||
+              data?.address?.county ||
+              data?.address?.state ||
+              'Current Location';
+            setLocationInput(realCity);
+          } catch (e) {
+            setLocationInput('Current Location');
+          } finally {
+            setIsLocating(false);
+          }
         },
         (err) => {
-          console.warn('Geolocation access denied or unavailable:', err);
-          setLocationInput('Little Italy, NY');
+          console.warn('Geolocation error or permission denied:', err);
+          setLocationInput('Current Location');
           setIsLocating(false);
         },
-        { timeout: 5000 }
+        { timeout: 8000, enableHighAccuracy: true }
       );
     } else {
-      setLocationInput('Little Italy, NY');
+      setLocationInput('Current Location');
       setIsLocating(false);
     }
   };
 
   const handleSearchSubmit = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     const query = new URLSearchParams();
 
     if (locationInput.trim() && locationInput !== 'Anywhere') {
@@ -100,6 +118,11 @@ export default function SearchModal({ isOpen, onClose }) {
 
     onClose();
     navigate(`/restaurants?${query.toString()}`);
+  };
+
+  const handlePopularLocationClick = (loc) => {
+    const selectedLoc = loc === 'Anywhere' ? '' : loc;
+    setLocationInput(selectedLoc);
   };
 
   const handleReset = () => {
@@ -149,7 +172,7 @@ export default function SearchModal({ isOpen, onClose }) {
               <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#717171]" />
               <input
                 type="text"
-                placeholder="Search destinations, neighborhoods, cities (e.g. Brooklyn, NY)..."
+                placeholder="Search destinations, neighborhoods, cities (e.g. Bole, Addis Ababa)..."
                 value={locationInput}
                 onChange={(e) => setLocationInput(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 text-xs bg-[#F7F7F7] border border-[#DDDDDD] rounded-2xl outline-none focus:border-[#222222] focus:bg-white transition font-medium"
@@ -163,7 +186,7 @@ export default function SearchModal({ isOpen, onClose }) {
                 <button
                   key={loc}
                   type="button"
-                  onClick={() => setLocationInput(loc === 'Anywhere' ? '' : loc)}
+                  onClick={() => handlePopularLocationClick(loc)}
                   className={`px-3 py-1 rounded-full text-[11px] font-semibold transition cursor-pointer ${
                     (loc === 'Anywhere' && !locationInput) || locationInput === loc
                       ? 'bg-[#222222] text-white'

@@ -101,12 +101,6 @@ export default function Navbar() {
               <span>Add a restaurant</span>
             </Link>
 
-            <button
-              className="hidden sm:flex items-center justify-center p-2.5 text-[#222222] hover:bg-[#F7F7F7] rounded-full transition cursor-pointer"
-              title="Global settings"
-            >
-              <Globe className="w-4.5 h-4.5" />
-            </button>
 
             {/* Airbnb Signature User Menu Capsule */}
             <div className="relative">
