@@ -44,109 +44,108 @@ const IMG = {
 const restaurants = [
   // ---------- Italian ----------
   {
-    name: "Le Basilic Addis",
+    name: "COOK Studio",
     description:
-      "Italian restaurant and cafe serving pizza, pasta and lasagna, with a menu that runs from breakfast through dinner.",
-    address: "Gabon St, Addis Ababa, Ethiopia",
+      "Small, clean Italian restaurant known for fresh pasta and excellent burgers, with friendly service and a complimentary starter.",
+    address: "Guinea Conakry St, Addis Ababa, Ethiopia",
     category: "Italian",
     cuisine: "Italian",
-    priceRange: "$$",
-    images: IMG.Italian,
-    contact: { phone: "+251 90 560 4444" },
-    openingHours: "Mon-Sun 8:30 AM - 10:00 PM (Wed until 10:30 PM)",
-    latitude: 8.995234,
-    longitude: 38.7674019,
-  },
-  {
-    name: "Little Italy (Bole Dembel)",
-    description:
-      "Cozy family-run Italian spot known for its pasta, pizza and ravioli, popular for dinners with family and friends.",
-    address: "Bole Dembel, Addis Ababa, Ethiopia",
-    category: "Italian",
-    cuisine: "Italian",
-    priceRange: "$$",
-    images: IMG.Italian,
-    contact: { phone: "+251 98 750 5154" },
-    openingHours: "Mon-Fri 12:00 PM - 9:00 PM, Sat-Sun 12:00 PM - 10:00 PM",
-    latitude: 9.0043014,
-    longitude: 38.7704031,
-  },
-  {
-    name: "Bettucci Ristorante & Pizzeria",
-    description:
-      "Restaurant and pizzeria with a traditional brick fire oven, garden seating and an art gallery on site.",
-    address: "Alem Village, Addis Ababa, Ethiopia",
-    category: "Italian",
-    cuisine: "Italian Pizza",
     priceRange: "$$$",
     images: IMG.Italian,
-    contact: { phone: "+251 99 116 2244" },
-    openingHours: "Tue-Sun 12:00 PM - 10:00 PM (Closed Mon)",
-    latitude: 8.9985031,
-    longitude: 38.7610273,
+    contact: { phone: "+251 93 133 1155" },
+    openingHours: "Mon-Sun 11:30 AM - 9:00 PM",
+    latitude: 9.0139659,
+    longitude: 38.7690653,
+  },
+  {
+    name: "Sale e Pepe",
+    description:
+      "Italian restaurant set in a charming old Ethiopian house with a garden, serving wood-fired pizza, carbonara and handmade pasta.",
+    address: "Queen Elizabeth II St, Addis Ababa, Ethiopia",
+    category: "Italian",
+    cuisine: "Italian",
+    priceRange: "$$$",
+    images: IMG.Italian,
+    contact: {
+      phone: "+251 94 333 9933",
+      website: "https://instagram.com/sale_e_pepe_addis",
+    },
+    openingHours:
+      "Tue-Sat 12:00-3:00 PM & 6:00-10:00 PM; Sun 12:00-5:00 PM (Closed Mon)",
+    latitude: 9.0330196,
+    longitude: 38.7760447,
+  },
+  {
+    name: "Bella Pasta and Pizza (Jackros)",
+    description:
+      "Long-running Italian restaurant chain in Addis, known for its signature pasta sauce, lasagna, pizza and combo menus in a family-friendly setting.",
+    address: "Jackros, Bole, Addis Ababa, Ethiopia",
+    category: "Italian",
+    cuisine: "Italian",
+    priceRange: "$$",
+    images: IMG.Italian,
+    contact: {
+      phone: "+251 93 655 6552",
+      website: "https://bellapastaandpizza.com/",
+    },
+    openingHours: "Mon-Sun 9:00 AM - 9:00 PM",
+    latitude: 8.9955134,
+    longitude: 38.7909554,
+  },
+  {
+    name: "Ethio-Italy",
+    description:
+      "Simple family restaurant open around the clock, loved for its cheesy lasagna, spaghetti and warm handmade bread with a spicy dip.",
+    address: "Zimbabwe St, Addis Ababa, Ethiopia",
+    category: "Italian",
+    cuisine: "Italian",
+    priceRange: "$$",
+    images: IMG.Italian,
+    contact: { phone: "+251 99 800 7839" },
+    openingHours: "Open 24 hours",
+    latitude: 8.9896775,
+    longitude: 38.7828058,
   },
 
   // ---------- Japanese ----------
   {
-    name: "Matsuki",
+    name: "Kokoro Addis",
     description:
-      "Upscale Japanese restaurant with sushi, cocktails and a cozy, luxurious atmosphere, often chosen for special occasions.",
-    address: "Ground floor, Kman Guesthouse, Addis Ababa, Ethiopia",
+      "Japanese restaurant and wine bar in Bole with sushi, ramen and steak dishes, and a chef-owner who often greets guests at their table.",
+    address: "Namibia St, Addis Ababa, Ethiopia",
     category: "Japanese",
-    cuisine: "Japanese Sushi",
-    priceRange: "$$$$",
+    cuisine: "Japanese Sushi & Ramen",
+    priceRange: "$$$",
     images: IMG.Japanese,
-    contact: { phone: "+251 90 117 1819" },
+    contact: {
+      phone: "+251 98 502 2222",
+      website: "http://www.kokoroaddis.com/",
+    },
     openingHours:
-      "Mon 6:00 PM - 11:00 PM; Tue-Sun 8:00-10:30 AM, 12:00-3:30 PM, 6:00-11:00 PM",
-    latitude: 8.9920451,
-    longitude: 38.7669652,
+      "Mon, Wed-Fri 9:00 AM-3:00 PM & 5:00-10:00 PM; Tue 9:00 AM-2:30 PM & 5:00-10:00 PM; Sat 9:00 AM-10:00 PM; Sun 9:30 AM-10:00 PM",
+    latitude: 9.0001339,
+    longitude: 38.7829554,
   },
   {
-    name: "KAZ Sushi & Japanese Fusion",
+    name: "HOTTO",
     description:
-      "Sushi and Japanese fusion restaurant with a fine-dining feel, also serving steaks and desserts. Reservations recommended.",
-    address: "Rebtek Apartments, Wendamanah St, Addis Ababa, Ethiopia",
+      "Upscale Asian fusion restaurant with a strong sushi menu, along with lamb chops, sea bass and premium steaks, popular for celebrations.",
+    address: "The Place Building, 1st Floor, Cape Verde St, Addis Ababa, Ethiopia",
     category: "Japanese",
-    cuisine: "Japanese Fusion",
+    cuisine: "Asian Fusion & Sushi",
     priceRange: "$$$$",
     images: IMG.Japanese,
-    contact: { phone: "+251 98 683 3333" },
+    contact: {
+      phone: "+251 90 347 5477",
+      website: "https://hottoaddis.com/",
+    },
     openingHours:
-      "Mon 6:00-11:00 PM; Tue-Sat 12:00-3:00 PM & 6:00-11:00 PM; Sun 11:00 AM-3:00 PM & 6:00-11:00 PM",
-    latitude: 9.0255248,
-    longitude: 38.7575221,
-  },
-  {
-    name: "Sakura Japanese Restaurant (Bole Rwanda)",
-    description:
-      "Calm Japanese restaurant with a garden setting and a large selection of dishes and drinks, using imported ingredients.",
-    address: "Near Rwanda Embassy, Bole Rwanda, Addis Ababa, Ethiopia",
-    category: "Japanese",
-    cuisine: "Japanese",
-    priceRange: "$$",
-    images: IMG.Japanese,
-    contact: { phone: "+251 98 487 3551" },
-    openingHours: "Mon-Sat 11:00 AM - 2:30 PM & 5:00 PM - 9:00 PM (Closed Sun)",
-    latitude: 8.9864932,
-    longitude: 38.7757714,
+      "Mon-Fri 12:00-4:00 PM & 5:30 PM-12:00 AM; Sat-Sun 12:00 PM-12:00 AM",
+    latitude: 9.0018168,
+    longitude: 38.7795922,
   },
 
   // ---------- BBQ ----------
-  {
-    name: "Chanoly Carnivore",
-    description:
-      "Grill-focused restaurant serving Texas-style barbecue with combo platters, in a spacious indoor and outdoor setting.",
-    address: "XQRH+GJG, Addis Ababa, Ethiopia",
-    category: "BBQ",
-    cuisine: "Texas BBQ",
-    priceRange: "$$$$",
-    images: IMG.BBQ,
-    contact: { phone: "+251 98 609 1656" },
-    openingHours: "Mon-Sun 9:00 AM - 11:00 PM",
-    latitude: 8.9910009,
-    longitude: 38.7788992,
-  },
   {
     name: "Korma Grill",
     description:
@@ -295,8 +294,16 @@ const restaurants = [
   },
 ];
 
-// Names from the earlier fictional demo seed. Removed so they don't mix with real data.
+// Restaurants that are deleted from the database when the seed runs:
+// the earlier fictional demo seed, plus real ones we replaced.
 const OLD_FICTIONAL_NAMES = [
+  "Le Basilic Addis",
+  "Little Italy (Bole Dembel)",
+  "Bettucci Ristorante & Pizzeria",
+  "Matsuki",
+  "KAZ Sushi & Japanese Fusion",
+  "Sakura Japanese Restaurant (Bole Rwanda)",
+  "Chanoly Carnivore",
   "Trattoria Bole",
   "La Piazza Piassa",
   "Sakura Kazanchis",
@@ -311,6 +318,14 @@ const OLD_FICTIONAL_NAMES = [
   "Merkato Roasters",
 ];
 
+// ---------------------------------------------------------------------------
+// Your own photos live in  backend/seed-images/
+// Name each restaurant's photos with the prefix below, e.g.
+//   toro.webp, toro 2.webp, toro 3.webp        (also accepts toro-2 / toro_2)
+// jpg, jpeg, png and webp all work; upper/lower case does not matter.
+// The seed copies them to uploads/seed/ (served at /uploads) with clean names
+// and uses them. Restaurants with no photos keep the generic category images.
+// ---------------------------------------------------------------------------
 const IMAGE_PREFIX: Record<string, string> = {
   "The Alchemist Dine & Wine": "alchemist",
   "Bete Aurael": "bete",
@@ -322,7 +337,12 @@ const IMAGE_PREFIX: Record<string, string> = {
   "Toro Grill and Lounge": "toro",
   "Wild Coffee (Gazebo Square)": "wild",
   "YeGesha Specialty Cafe & Roastery": "yegesha",
-  // add more as you prepare photos, e.g.  "Matsuki": "matsuki",
+  "COOK Studio": "cook",
+  "Sale e Pepe": "sale",
+  "Bella Pasta and Pizza (Jackros)": "bella",
+  "Ethio-Italy": "ethioitaly", // matches your file names (ethioitaly*)
+  "Kokoro Addis": "kokoro",
+  "HOTTO": "hotto",
 };
 
 const SEED_IMAGES_DIR = path.join(process.cwd(), "seed-images");
@@ -381,7 +401,7 @@ async function seedRestaurants() {
     name: { $in: OLD_FICTIONAL_NAMES },
   });
   if (removed.deletedCount) {
-    console.log(`Removed ${removed.deletedCount} old fictional restaurants.`);
+    console.log(`Removed ${removed.deletedCount} old restaurants.`);
   }
 
   let created = 0;

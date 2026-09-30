@@ -12,7 +12,7 @@ const getPagination = (req: Request) => {
     const itemsPerPage =
         Number.isInteger(limit) && limit > 0
             ? Math.min(limit, 50)
-            : 10;
+            : 12;
 
     return {
         page: currentPage,
@@ -37,6 +37,15 @@ export const getRestaurants = async (req: Request, res: Response, next: NextFunc
     try {
         const { page, limit, skip } = getPagination(req);
         const { search, category, priceRange, location } = req.query;
+        const { sort } = req.query;
+
+        // Sort on the server so the order is correct across pages
+        const sortOption: Record<string, 1 | -1> =
+            sort === 'rating'
+                ? { averageRating: -1, name: 1 }
+                : sort === 'name'
+                ? { name: 1 }
+                : { createdAt: -1 };
 
         const filter: Record<string, unknown> = {};
 
@@ -74,7 +83,7 @@ export const getRestaurants = async (req: Request, res: Response, next: NextFunc
         }
 
         const [restaurants, total] = await Promise.all([
-            Restaurant.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Restaurant.find(filter).sort(sortOption).skip(skip).limit(limit),
             Restaurant.countDocuments(filter),
         ]);
 

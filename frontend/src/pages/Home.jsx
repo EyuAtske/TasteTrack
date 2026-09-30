@@ -34,6 +34,7 @@ const CATEGORIES = [
 
 export default function Home() {
   const [restaurants, setRestaurants] = useState([]);
+  const [totalCount, setTotalCount] = useState(0); // real total from the API (not just this page)
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchLocation, setSearchLocation] = useState('');
   const [searchCuisine, setSearchCuisine] = useState('');
@@ -58,8 +59,10 @@ export default function Home() {
   const fetchRestaurants = async () => {
     setIsLoading(true);
     try {
-      const data = await restaurantApi.getRestaurants({ category: selectedCategory });
-      setRestaurants(data.restaurants || []);
+      const data = await restaurantApi.getRestaurants({ category: selectedCategory, limit: 12 });
+      const list = data.restaurants || data.data || [];
+      setRestaurants(list);
+      setTotalCount(data.total ?? list.length);
     } catch (err) {
       console.error(err);
     } finally {
@@ -188,10 +191,10 @@ export default function Home() {
             <p className="text-xs text-[#717171] mt-0.5">Handpicked places loved by local foodies</p>
           </div>
           <Link
-            to="/restaurants"
+            to={selectedCategory === 'All' ? '/restaurants' : `/restaurants?category=${encodeURIComponent(selectedCategory)}`}
             className="flex items-center gap-1 text-xs font-semibold text-[#222222] hover:underline"
           >
-            <span>Show all ({restaurants.length})</span>
+            <span>Show all ({totalCount})</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>

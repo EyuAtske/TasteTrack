@@ -96,13 +96,18 @@ export default function RestaurantDetails() {
   const isFavorite = user?.favorites?.includes(String(id));
   const isAdmin = user?.role === 'admin';
 
-  const handleToggleFavorite = () => {
+  const handleToggleFavorite = async () => {
     if (!user) {
       addToast('Login Required', 'Please log in to save restaurants to your favorites.', 'info');
       return;
     }
-    toggleFavoriteRestaurant(String(id));
-    if (isFavorite) {
+    const wasFavorite = isFavorite;
+    const ok = await toggleFavoriteRestaurant(String(id));
+    if (!ok) {
+      addToast('Error', 'Could not update your favorites. Please log in again and retry.', 'error');
+      return;
+    }
+    if (wasFavorite) {
       addToast('Removed from favorites', `${restaurant.name} removed from saved places.`, 'info');
     } else {
       addToast('Saved to favorites!', `${restaurant.name} added to your saved list.`, 'success');

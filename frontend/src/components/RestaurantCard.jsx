@@ -10,7 +10,7 @@ export default function RestaurantCard({ restaurant }) {
 
   const isFavorite = user?.favorites?.includes(String(restaurant._id));
 
-  const handleFavoriteClick = (e) => {
+  const handleFavoriteClick = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -19,8 +19,14 @@ export default function RestaurantCard({ restaurant }) {
       return;
     }
 
-    toggleFavoriteRestaurant(String(restaurant._id));
-    if (isFavorite) {
+    const wasFavorite = isFavorite;
+    const ok = await toggleFavoriteRestaurant(String(restaurant._id));
+    if (!ok) {
+      addToast('Error', 'Could not update your wishlist. Please log in again and retry.', 'error');
+      return;
+    }
+
+    if (wasFavorite) {
       addToast('Removed from wishlist', `${restaurant.name} was removed from your saved spots.`, 'info');
     } else {
       addToast('Saved to wishlist!', `${restaurant.name} was added to your saved spots.`, 'success');

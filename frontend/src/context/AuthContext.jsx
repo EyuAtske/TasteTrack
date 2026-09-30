@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
+import { favoriteApi } from '../api/favoriteApi';
 
 const AuthContext = createContext(null);
 
@@ -139,19 +140,48 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const toggleFavoriteRestaurant = (restaurantId) => {
-    setUser((prev) => {
-      if (!prev) return null;
-      const currentFavs = prev.favorites || [];
-      const isFav = currentFavs.includes(restaurantId);
-      const newFavs = isFav
-        ? currentFavs.filter((id) => id !== restaurantId)
-        : [...currentFavs, restaurantId];
-      
-      const updated = { ...prev, favorites: newFavs };
-      localStorage.setItem('tasteTrack_user', JSON.stringify(updated));
-      return updated;
-    });
+  // Saves the favorite on the server (so it survives a reload), with an instant UI update.
+  // Returns true on success, false if the server rejected it (state is rolled back).
+  const toggleFavoriteRestaurant = async (restaurantId) => {
+    if (!user) return false;
+
+    const id = String(restaurantId);
+    const before = (user.favorites || []).map((f) => String(f._id || f));
+    const isFav = before.includes(id);
+
+    const applyFavorites = (favs) => {
+      setUser((prev) => {
+        if (!prev) return prev;
+        const updated = { ...prev, favorites: favs };
+        localStorage.setItem('tasteTrack_user', JSON.stringify(updated));
+        return updated;
+      });
+    };
+
+    // optimistic update
+    applyFavorites(isFav ? before.filter((f) => f !== id) : [...before, id]);
+
+    try {
+      const res = isFav
+        ? await favoriteApi.removeFavorite(id)
+        : await favoriteApi.addFavorite(id);
+
+      // trust the server's list when it sends one
+      const serverFavs = res?.data;
+      if (Array.isArray(serverFavs)) {
+        applyFavorites(serverFavs.map((f) => String(f._id || f)));
+      }
+      return true;
+    } catch (err) {
+      // already saved on the server: our local state was just out of date
+      if (err?.response?.status === 400 && /already/i.test(err.response?.data?.message || '')) {
+        applyFavorites(before.includes(id) ? before : [...before, id]);
+        return true;
+      }
+      console.error('Failed to update favorites:', err?.response?.data?.message || err?.message);
+      applyFavorites(before); // roll back
+      return false;
+    }
   };
 
   return (
