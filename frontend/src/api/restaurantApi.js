@@ -78,18 +78,51 @@ export const restaurantApi = {
 
   createRestaurant: async (data) => {
     try {
-      const response = await axiosClient.post('/restaurants', data);
+      const isFormData = data instanceof FormData;
+      const headers = isFormData ? { 'Content-Type': 'multipart/form-data' } : {};
+      const response = await axiosClient.post('/restaurants', data, { headers });
       return response.data;
     } catch (err) {
       console.warn('Backend unavailable, creating mock restaurant entry.', err?.message);
       const list = getLocalMockRestaurants();
+
+      let payload = {};
+      if (data instanceof FormData) {
+        data.forEach((val, key) => {
+          if (key !== 'images') payload[key] = val;
+        });
+      } else {
+        payload = { ...data };
+      }
+
+      // Convert image files or fallback image
+      let images = payload.images || [];
+      if (data instanceof FormData) {
+        const files = data.getAll('images');
+        if (files && files.length > 0 && files[0] instanceof File) {
+          images = files.map((f) => URL.createObjectURL(f));
+        }
+      }
+
       const newEntry = {
         _id: 'rest_' + Date.now(),
-        ...data,
-        averageRating: data.averageRating || 5.0,
+        name: payload.name || 'New Restaurant',
+        description: payload.description || '',
+        category: payload.category || 'Italian',
+        cuisine: payload.cuisine || 'Italian',
+        priceRange: payload.priceRange || '$$',
+        address: payload.address || '',
+        images: images.length > 0 ? images : ['https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80'],
+        contact: {
+          phone: payload.phone || '',
+          website: payload.website || '',
+        },
+        openingHours: payload.openingHours || 'Mon-Sun: 11:30 AM - 10:00 PM',
+        averageRating: 5.0,
         reviewCount: 0,
         featured: false,
       };
+
       const updated = [newEntry, ...list];
       saveLocalMockRestaurants(updated);
       return { restaurant: newEntry, message: 'Restaurant created successfully (Mock mode)' };
@@ -98,11 +131,39 @@ export const restaurantApi = {
 
   updateRestaurant: async (id, data) => {
     try {
-      const response = await axiosClient.put(`/restaurants/${id}`, data);
+      const isFormData = data instanceof FormData;
+      const headers = isFormData ? { 'Content-Type': 'multipart/form-data' } : {};
+      const response = await axiosClient.put(`/restaurants/${id}`, data, { headers });
       return response.data;
     } catch (err) {
       const list = getLocalMockRestaurants();
-      const updated = list.map((r) => (r._id === id ? { ...r, ...data } : r));
+      let payload = {};
+      let uploadedImages = [];
+
+      if (data instanceof FormData) {
+        data.forEach((val, key) => {
+          if (key !== 'images') payload[key] = val;
+        });
+        const files = data.getAll('images');
+        if (files && files.length > 0 && files[0] instanceof File) {
+          uploadedImages = files.map((f) => URL.createObjectURL(f));
+        }
+      } else {
+        payload = { ...data };
+      }
+
+      const updated = list.map((r) => {
+        if (r._id === id) {
+          const finalImages = uploadedImages.length > 0 ? uploadedImages : (payload.images || r.images);
+          return {
+            ...r,
+            ...payload,
+            images: finalImages,
+          };
+        }
+        return r;
+      });
+
       saveLocalMockRestaurants(updated);
       return { message: 'Restaurant updated successfully (Mock mode)' };
     }
