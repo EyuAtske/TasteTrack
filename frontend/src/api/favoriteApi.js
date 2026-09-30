@@ -9,10 +9,10 @@ export const favoriteApi = {
     } catch (err) {
       console.warn('Backend unavailable, fetching favorites from mock user state.', err?.message);
       const savedUser = JSON.parse(localStorage.getItem('tasteTrack_user') || '{}');
-      const favIds = savedUser.favorites || ['1', '3'];
+      const favIds = savedUser.favorites || [];
       const { restaurants } = await restaurantApi.getRestaurants();
-      const favRestaurants = restaurants.filter((r) => favIds.includes(String(r._id)));
-      return { favorites: favRestaurants };
+      const favRestaurants = (restaurants || []).filter((r) => favIds.includes(String(r._id)));
+      return { success: true, count: favRestaurants.length, data: favRestaurants, favorites: favRestaurants };
     }
   },
 

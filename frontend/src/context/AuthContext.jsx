@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
+import { favoriteApi } from '../api/favoriteApi';
 
 const AuthContext = createContext(null);
 
@@ -139,12 +140,13 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const toggleFavoriteRestaurant = (restaurantId) => {
+  const toggleFavoriteRestaurant = async (restaurantId) => {
+    let isCurrentlyFav = false;
     setUser((prev) => {
       if (!prev) return null;
       const currentFavs = prev.favorites || [];
-      const isFav = currentFavs.includes(restaurantId);
-      const newFavs = isFav
+      isCurrentlyFav = currentFavs.includes(restaurantId);
+      const newFavs = isCurrentlyFav
         ? currentFavs.filter((id) => id !== restaurantId)
         : [...currentFavs, restaurantId];
       
@@ -152,6 +154,16 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('tasteTrack_user', JSON.stringify(updated));
       return updated;
     });
+
+    try {
+      if (isCurrentlyFav) {
+        await favoriteApi.removeFavorite(restaurantId);
+      } else {
+        await favoriteApi.addFavorite(restaurantId);
+      }
+    } catch (err) {
+      console.warn('Failed to sync favorite change with backend:', err?.message);
+    }
   };
 
   return (

@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { dashboardApi } from '../api/dashboardApi';
 import { restaurantApi } from '../api/restaurantApi';
+import { favoriteApi } from '../api/favoriteApi';
 import RestaurantCard from '../components/RestaurantCard';
 import Modal from '../components/Modal';
 import ImageUploadInput from '../components/ImageUploadInput';
@@ -26,6 +27,8 @@ export default function Dashboard() {
 
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [favoriteRestaurants, setFavoriteRestaurants] = useState([]);
+  const [isLoadingFavs, setIsLoadingFavs] = useState(false);
 
   // Admin Add Restaurant Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -54,7 +57,31 @@ export default function Dashboard() {
   useEffect(() => {
     fetchDashboard();
     if (user?.role === 'admin') fetchAllRestaurants();
-  }, [user]);
+  }, [user?._id]);
+
+  useEffect(() => {
+    const fetchUserFavorites = async () => {
+      if (!user?.favorites || user.favorites.length === 0) {
+        setFavoriteRestaurants([]);
+        return;
+      }
+
+      setIsLoadingFavs(true);
+      try {
+        const res = await favoriteApi.getFavorites();
+        const favsList = res.data || res.favorites || [];
+        setFavoriteRestaurants(favsList);
+      } catch (err) {
+        console.error('Failed to load favorites:', err);
+      } finally {
+        setIsLoadingFavs(false);
+      }
+    };
+
+    if (user) {
+      fetchUserFavorites();
+    }
+  }, [user?.favorites?.length, user?.favorites?.join(',')]);
 
   const fetchDashboard = async () => {
     setIsLoading(true);
@@ -154,14 +181,30 @@ export default function Dashboard() {
 
   if (!user) return null; // ProtectedRoute handles redirect
 
-  const stats = dashboardData?.stats || {
-    totalFavorites: user.favorites?.length || 0,
-    totalReviews: 4,
-    totalVisited: 12,
-    avgRatingGiven: 4.8,
+  const getLocalUserReviewStats = () => {
+    try {
+      const savedReviews = JSON.parse(localStorage.getItem('tasteTrack_reviews') || '[]');
+      const userReviews = savedReviews.filter(
+        (r) => r.user?._id === user?._id || r.user === user?._id
+      );
+      const count = userReviews.length;
+      const visited = new Set(userReviews.map((r) => String(r.restaurant))).size;
+      const sum = userReviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
+      const avg = count > 0 ? Number((sum / count).toFixed(1)) : 0;
+      return { totalReviews: count, totalVisited: visited, avgRatingGiven: avg };
+    } catch (e) {
+      return { totalReviews: 0, totalVisited: 0, avgRatingGiven: 0 };
+    }
   };
 
-  const favorites = dashboardData?.favorites || [];
+  const localStats = getLocalUserReviewStats();
+
+  const stats = {
+    totalFavorites: user.favorites?.length || 0,
+    totalReviews: dashboardData?.stats?.totalReviews ?? localStats.totalReviews,
+    totalVisited: dashboardData?.stats?.totalVisited ?? localStats.totalVisited,
+    avgRatingGiven: dashboardData?.stats?.avgRatingGiven ?? localStats.avgRatingGiven,
+  };
 
   return (
     <div className="space-y-8">
@@ -256,9 +299,9 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {favorites.length > 0 ? (
+        {favoriteRestaurants.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {favorites.map((restaurant) => (
+            {favoriteRestaurants.map((restaurant) => (
               <RestaurantCard key={restaurant._id} restaurant={restaurant} />
             ))}
           </div>
