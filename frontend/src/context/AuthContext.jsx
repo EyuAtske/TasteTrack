@@ -5,31 +5,41 @@ import { favoriteApi } from '../api/favoriteApi';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  /**
+   * Initialise from localStorage so a page refresh doesn't instantly log the
+   * user out — the useEffect below will validate the token against the backend
+   * and update or clear state accordingly.
+   */
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('tasteTrack_user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    try {
+      const saved = localStorage.getItem('tasteTrack_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
-  
-  const [token, setToken] = useState(() => {
-    return localStorage.getItem('tasteTrack_token') || null;
-  });
+
+  const [token, setToken] = useState(() => localStorage.getItem('tasteTrack_token') || null);
 
   const [isLoading, setIsLoading] = useState(true);
 
-  // Sync token with axios header and fetch profile on initial load
+  // On mount: validate the stored token by fetching the live profile.
+  // If the token is expired / invalid the backend returns 401 → we log out.
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem('tasteTrack_token');
       if (storedToken) {
-        setToken(storedToken);
+        // Ensure every axios request carries the token
         axiosClient.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         try {
           const res = await axiosClient.get('/users/profile');
-          setUser(res.data.user || res.data);
-          localStorage.setItem('tasteTrack_user', JSON.stringify(res.data.user || res.data));
+          const freshUser = res.data.user || res.data;
+          setUser(freshUser);
+          localStorage.setItem('tasteTrack_user', JSON.stringify(freshUser));
         } catch (err) {
-          // If profile fetch fails but token is mock/valid, keep stored user if present
-          console.warn('Backend profile fetch failed, using cached session if present:', err?.message);
+          // Token is invalid / expired — clear everything
+          console.warn('Token validation failed, logging out:', err?.response?.status);
+          clearAuthState();
         }
       }
       setIsLoading(false);
@@ -38,93 +48,15 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
-  const login = async (email, password) => {
-    setIsLoading(true);
-    try {
-      // Try backend call
-      const response = await axiosClient.post('/auth/login', { email, password });
-      const { token: newToken, user: userData } = response.data;
-      
-      setToken(newToken);
-      setUser(userData);
-      localStorage.setItem('tasteTrack_token', newToken);
-      localStorage.setItem('tasteTrack_user', JSON.stringify(userData));
-      axiosClient.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      
-      setIsLoading(false);
-      return { success: true, user: userData };
-    } catch (err) {
-      // Dev / Mock fallback if backend server isn't reachable or returns error
-      console.warn('Backend login endpoint failed. Falling back to mock authentication for testing.', err);
-      
-      const mockUser = {
-        _id: 'usr_' + Date.now(),
-        name: email.split('@')[0].replace('.', ' ') || 'Foodie Traveler',
-        email: email,
-        role: email.includes('admin') ? 'admin' : 'user',
-        bio: 'Culinary explorer & food photographer. Always hunting for the best handmade pasta.',
-        profileImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-        favorites: ['1', '3'],
-        createdAt: new Date().toISOString(),
-      };
-      const mockToken = 'mock_jwt_token_' + Date.now();
-
-      setToken(mockToken);
-      setUser(mockUser);
-      localStorage.setItem('tasteTrack_token', mockToken);
-      localStorage.setItem('tasteTrack_user', JSON.stringify(mockUser));
-      axiosClient.defaults.headers.common['Authorization'] = `Bearer ${mockToken}`;
-      
-      setIsLoading(false);
-      return { success: true, user: mockUser, isMock: true };
-    }
+  const persistAuthState = (newToken, userData) => {
+    setToken(newToken);
+    setUser(userData);
+    localStorage.setItem('tasteTrack_token', newToken);
+    localStorage.setItem('tasteTrack_user', JSON.stringify(userData));
+    axiosClient.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
   };
 
-  const register = async (name, email, password) => {
-    setIsLoading(true);
-    try {
-      const response = await axiosClient.post('/auth/register', { name, email, password });
-      const { token: newToken, user: userData } = response.data;
-      
-      setToken(newToken);
-      setUser(userData);
-      localStorage.setItem('tasteTrack_token', newToken);
-      localStorage.setItem('tasteTrack_user', JSON.stringify(userData));
-      axiosClient.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-
-      setIsLoading(false);
-      return { success: true, user: userData };
-    } catch (err) {
-      console.warn('Backend register failed, using mock register fallback.', err);
-      const mockUser = {
-        _id: 'usr_' + Date.now(),
-        name,
-        email,
-        role: 'user',
-        bio: 'New TasteTrack member discovering amazing places!',
-        profileImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80',
-        favorites: [],
-        createdAt: new Date().toISOString(),
-      };
-      const mockToken = 'mock_jwt_token_' + Date.now();
-
-      setToken(mockToken);
-      setUser(mockUser);
-      localStorage.setItem('tasteTrack_token', mockToken);
-      localStorage.setItem('tasteTrack_user', JSON.stringify(mockUser));
-      axiosClient.defaults.headers.common['Authorization'] = `Bearer ${mockToken}`;
-
-      setIsLoading(false);
-      return { success: true, user: mockUser, isMock: true };
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await axiosClient.post('/auth/logout');
-    } catch (err) {
-      // Ignore network errors on logout
-    }
+  const clearAuthState = () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('tasteTrack_token');
@@ -132,24 +64,72 @@ export const AuthProvider = ({ children }) => {
     delete axiosClient.defaults.headers.common['Authorization'];
   };
 
+  /**
+   * Login — throws on failure (caller shows the error to the user).
+   */
+  const login = async (email, password) => {
+    setIsLoading(true);
+    try {
+      const response = await axiosClient.post('/auth/login', { email, password });
+      const { token: newToken, user: userData } = response.data;
+      persistAuthState(newToken, userData);
+      return { success: true, user: userData };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Register — throws on failure (caller shows the error to the user).
+   */
+  const register = async (name, email, password) => {
+    setIsLoading(true);
+    try {
+      const response = await axiosClient.post('/auth/register', { name, email, password });
+      const { token: newToken, user: userData } = response.data;
+      persistAuthState(newToken, userData);
+      return { success: true, user: userData };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Logout — always succeeds client-side even if the backend call fails.
+   */
+  const logout = async () => {
+    try {
+      await axiosClient.post('/auth/logout');
+    } catch {
+      // Ignore network errors on logout
+    }
+    clearAuthState();
+  };
+
+  /**
+   * Update local user object after profile edits.
+   */
   const updateUserProfile = (updatedData) => {
     setUser((prev) => {
-      const nextUser = { ...prev, ...updatedData };
-      localStorage.setItem('tasteTrack_user', JSON.stringify(nextUser));
-      return nextUser;
+      const next = { ...prev, ...updatedData };
+      localStorage.setItem('tasteTrack_user', JSON.stringify(next));
+      return next;
     });
   };
 
+  /**
+   * Toggle a restaurant in the user's favorites list.
+   * Optimistic update → sync with backend.
+   */
   const toggleFavoriteRestaurant = async (restaurantId) => {
     let isCurrentlyFav = false;
     setUser((prev) => {
       if (!prev) return null;
       const currentFavs = prev.favorites || [];
-      isCurrentlyFav = currentFavs.includes(restaurantId);
+      isCurrentlyFav = currentFavs.some((id) => String(id) === String(restaurantId));
       const newFavs = isCurrentlyFav
-        ? currentFavs.filter((id) => id !== restaurantId)
+        ? currentFavs.filter((id) => String(id) !== String(restaurantId))
         : [...currentFavs, restaurantId];
-      
       const updated = { ...prev, favorites: newFavs };
       localStorage.setItem('tasteTrack_user', JSON.stringify(updated));
       return updated;
@@ -162,7 +142,7 @@ export const AuthProvider = ({ children }) => {
         await favoriteApi.addFavorite(restaurantId);
       }
     } catch (err) {
-      console.warn('Failed to sync favorite change with backend:', err?.message);
+      console.warn('Failed to sync favorite with backend:', err?.message);
     }
   };
 

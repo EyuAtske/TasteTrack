@@ -10,7 +10,7 @@ const axiosClient = axios.create({
 // Add a request interceptor to include the JWT token
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('tasteTrack_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

@@ -10,7 +10,8 @@ import {
   Trash2,
   Pencil,
   Utensils,
-  ArrowUpRight,
+  MapPin,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -20,6 +21,18 @@ import { favoriteApi } from '../api/favoriteApi';
 import RestaurantCard from '../components/RestaurantCard';
 import Modal from '../components/Modal';
 import ImageUploadInput from '../components/ImageUploadInput';
+
+/**
+ * Geocode a human-readable address to lat/lng using the free Nominatim API.
+ * Returns { lat, lon } or throws if not found.
+ */
+async function geocodeAddress(address) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+  const data = await res.json();
+  if (!data || data.length === 0) throw new Error('Address not found on map');
+  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -39,11 +52,13 @@ export default function Dashboard() {
     cuisine: 'Italian',
     priceRange: '$$',
     address: '',
-    imageUrl: '',
+    latitude: '',
+    longitude: '',
     phone: '',
     website: '',
     openingHours: 'Mon-Sun: 11:30 AM - 10:00 PM',
   });
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Admin: all restaurants list + delete modal
@@ -65,12 +80,10 @@ export default function Dashboard() {
         setFavoriteRestaurants([]);
         return;
       }
-
       setIsLoadingFavs(true);
       try {
         const res = await favoriteApi.getFavorites();
-        const favsList = res.data || res.favorites || [];
-        setFavoriteRestaurants(favsList);
+        setFavoriteRestaurants(res.data || res.favorites || []);
       } catch (err) {
         console.error('Failed to load favorites:', err);
       } finally {
@@ -78,10 +91,8 @@ export default function Dashboard() {
       }
     };
 
-    if (user) {
-      fetchUserFavorites();
-    }
-  }, [user?.favorites?.length, user?.favorites?.join(',')]);
+    if (user) fetchUserFavorites();
+  }, [user?.favorites?.length, user?.favorites?.join?.(',')]);
 
   const fetchDashboard = async () => {
     setIsLoading(true);
@@ -89,7 +100,7 @@ export default function Dashboard() {
       const data = await dashboardApi.getDashboardData();
       setDashboardData(data);
     } catch (err) {
-      console.error(err);
+      console.error('Dashboard fetch error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +112,7 @@ export default function Dashboard() {
       const data = await restaurantApi.getRestaurants();
       setAllRestaurants(data.restaurants || []);
     } catch (err) {
-      console.error(err);
+      console.error('Restaurant list fetch error:', err);
     } finally {
       setIsLoadingRestaurants(false);
     }
@@ -129,10 +140,38 @@ export default function Dashboard() {
     }
   };
 
+  /**
+   * Auto-geocode the address when the user leaves the address field.
+   */
+  const handleAddressBlur = async () => {
+    if (!formData.address.trim()) return;
+    // Only auto-fill if both lat/lng are still empty
+    if (formData.latitude && formData.longitude) return;
+    setIsGeocoding(true);
+    try {
+      const { lat, lon } = await geocodeAddress(formData.address);
+      setFormData((prev) => ({ ...prev, latitude: String(lat), longitude: String(lon) }));
+      addToast('Location Found', `Coordinates set: ${lat.toFixed(4)}, ${lon.toFixed(4)}`, 'success');
+    } catch {
+      addToast('Geocoding Failed', 'Could not find coordinates for this address. Please enter them manually.', 'info');
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
   const handleAddRestaurantSubmit = async (e) => {
     e.preventDefault();
+
     if (!formData.name.trim() || !formData.address.trim()) {
       addToast('Validation Error', 'Restaurant name and address are required.', 'error');
+      return;
+    }
+
+    const lat = parseFloat(formData.latitude);
+    const lon = parseFloat(formData.longitude);
+
+    if (isNaN(lat) || isNaN(lon)) {
+      addToast('Location Required', 'Please enter valid latitude and longitude (or enter the address first to auto-fill).', 'error');
       return;
     }
 
@@ -145,14 +184,14 @@ export default function Dashboard() {
       submitData.append('cuisine', formData.cuisine);
       submitData.append('priceRange', formData.priceRange);
       submitData.append('address', formData.address);
+      submitData.append('latitude', String(lat));
+      submitData.append('longitude', String(lon));
       submitData.append('phone', formData.phone);
       submitData.append('website', formData.website);
       submitData.append('openingHours', formData.openingHours);
 
       if (formData.imageFiles && formData.imageFiles.length > 0) {
-        formData.imageFiles.forEach((file) => {
-          submitData.append('images', file);
-        });
+        formData.imageFiles.forEach((file) => submitData.append('images', file));
       }
 
       await restaurantApi.createRestaurant(submitData);
@@ -166,44 +205,32 @@ export default function Dashboard() {
         cuisine: 'Italian',
         priceRange: '$$',
         address: '',
+        latitude: '',
+        longitude: '',
         imageFiles: [],
         phone: '',
         website: '',
         openingHours: 'Mon-Sun: 11:30 AM - 10:00 PM',
       });
+
+      // Refresh both lists so the new restaurant appears immediately
       fetchDashboard();
+      fetchAllRestaurants();
     } catch (err) {
-      addToast('Error', 'Failed to create restaurant.', 'error');
+      const msg = err?.response?.data?.message || 'Failed to create restaurant.';
+      addToast('Error', msg, 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!user) return null; // ProtectedRoute handles redirect
-
-  const getLocalUserReviewStats = () => {
-    try {
-      const savedReviews = JSON.parse(localStorage.getItem('tasteTrack_reviews') || '[]');
-      const userReviews = savedReviews.filter(
-        (r) => r.user?._id === user?._id || r.user === user?._id
-      );
-      const count = userReviews.length;
-      const visited = new Set(userReviews.map((r) => String(r.restaurant))).size;
-      const sum = userReviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
-      const avg = count > 0 ? Number((sum / count).toFixed(1)) : 0;
-      return { totalReviews: count, totalVisited: visited, avgRatingGiven: avg };
-    } catch (e) {
-      return { totalReviews: 0, totalVisited: 0, avgRatingGiven: 0 };
-    }
-  };
-
-  const localStats = getLocalUserReviewStats();
+  if (!user) return null;
 
   const stats = {
     totalFavorites: user.favorites?.length || 0,
-    totalReviews: dashboardData?.stats?.totalReviews ?? localStats.totalReviews,
-    totalVisited: dashboardData?.stats?.totalVisited ?? localStats.totalVisited,
-    avgRatingGiven: dashboardData?.stats?.avgRatingGiven ?? localStats.avgRatingGiven,
+    totalReviews: dashboardData?.stats?.totalReviews ?? 0,
+    totalVisited: dashboardData?.stats?.totalVisited ?? 0,
+    avgRatingGiven: dashboardData?.stats?.avgRatingGiven ?? 0,
   };
 
   return (
@@ -230,7 +257,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Action Controls */}
         <div className="flex items-center gap-3 shrink-0">
           <Link
             to="/profile"
@@ -299,7 +325,11 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {favoriteRestaurants.length > 0 ? (
+        {isLoadingFavs ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((n) => <div key={n} className="h-64 bg-neutral-200/60 rounded-2xl animate-pulse" />)}
+          </div>
+        ) : favoriteRestaurants.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {favoriteRestaurants.map((restaurant) => (
               <RestaurantCard key={restaurant._id} restaurant={restaurant} />
@@ -322,19 +352,17 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Admin Add Restaurant Modal */}
-      <Modal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title="Add New Restaurant"
-      >
+      {/* ── Admin Add Restaurant Modal ── */}
+      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add New Restaurant">
         <form onSubmit={handleAddRestaurantSubmit} className="space-y-3.5">
+
           <div>
             <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">
               Restaurant Name *
             </label>
             <input
               type="text"
+              id="add-restaurant-name"
               placeholder="e.g. Osteria Francescana"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -345,9 +373,7 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">
-                Category
-              </label>
+              <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">Category</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -361,11 +387,8 @@ export default function Dashboard() {
                 <option value="Cafes">Cafes</option>
               </select>
             </div>
-
             <div>
-              <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">
-                Price Range
-              </label>
+              <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">Price Range</label>
               <select
                 value={formData.priceRange}
                 onChange={(e) => setFormData({ ...formData, priceRange: e.target.value })}
@@ -379,24 +402,68 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Address + geocoding */}
           <div>
             <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">
               Full Address *
             </label>
-            <input
-              type="text"
-              placeholder="123 Foodie Blvd, City, Zip"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className="w-full px-3.5 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-rose-500"
-              required
-            />
+            <div className="relative">
+              <input
+                type="text"
+                id="add-restaurant-address"
+                placeholder="123 Foodie Blvd, City, Country"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onBlur={handleAddressBlur}
+                className="w-full px-3.5 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-rose-500 pr-8"
+                required
+              />
+              {isGeocoding && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-rose-500 animate-spin" />
+              )}
+            </div>
+            <p className="text-[10px] text-neutral-400 mt-1 flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              Tab out of the address field to auto-fill coordinates
+            </p>
+          </div>
+
+          {/* Lat / Lng */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">
+                Latitude *
+              </label>
+              <input
+                type="number"
+                step="any"
+                id="add-restaurant-lat"
+                placeholder="e.g. 41.9028"
+                value={formData.latitude}
+                onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                className="w-full px-3.5 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-rose-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">
+                Longitude *
+              </label>
+              <input
+                type="number"
+                step="any"
+                id="add-restaurant-lng"
+                placeholder="e.g. 12.4964"
+                value={formData.longitude}
+                onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                className="w-full px-3.5 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-rose-500"
+                required
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">
-              Description
-            </label>
+            <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">Description</label>
             <textarea
               rows={3}
               placeholder="Brief description of atmosphere, special dishes, etc."
@@ -404,6 +471,48 @@ export default function Dashboard() {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-3.5 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-rose-500 resize-none"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">Opening Hours</label>
+              <input
+                type="text"
+                value={formData.openingHours}
+                onChange={(e) => setFormData({ ...formData, openingHours: e.target.value })}
+                className="w-full px-3.5 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-rose-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">Cuisine</label>
+              <input
+                type="text"
+                value={formData.cuisine}
+                onChange={(e) => setFormData({ ...formData, cuisine: e.target.value })}
+                className="w-full px-3.5 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-rose-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">Phone</label>
+              <input
+                type="text"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-3.5 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-rose-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1">Website</label>
+              <input
+                type="text"
+                value={formData.website}
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                className="w-full px-3.5 py-2 text-xs bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:border-rose-500"
+              />
+            </div>
           </div>
 
           <ImageUploadInput
@@ -415,8 +524,9 @@ export default function Dashboard() {
 
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full py-3 bg-neutral-900 text-white font-bold text-xs rounded-xl hover:bg-neutral-800 transition cursor-pointer"
+            id="add-restaurant-submit"
+            disabled={isSubmitting || isGeocoding}
+            className="w-full py-3 bg-neutral-900 text-white font-bold text-xs rounded-xl hover:bg-neutral-800 transition cursor-pointer disabled:opacity-60"
           >
             {isSubmitting ? 'Creating...' : 'Save Restaurant'}
           </button>
@@ -474,7 +584,7 @@ export default function Dashboard() {
                         <td className="px-4 py-3.5 hidden lg:table-cell">
                           <div className="flex items-center gap-1">
                             <Star className="w-3.5 h-3.5 fill-[#222222] text-[#222222]" />
-                            <span className="font-semibold text-[#222222]">{restaurant.averageRating || '4.8'}</span>
+                            <span className="font-semibold text-[#222222]">{restaurant.averageRating || '0'}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
