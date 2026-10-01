@@ -14,15 +14,32 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin@12345";
 
 // Creates the default admin if missing. Assumes mongoose is already connected.
 // Safe to call on every start: it never creates duplicates and never changes
-// an existing password.
+// an existing password, unless a reset is requested:
+//   npm run seed:admin -- --reset     (command line)
+//   RESET_ADMIN_PASSWORD=true         (environment variable, e.g. on Render)
 export async function ensureAdmin() {
-  const existing = await User.findOne({ email: ADMIN_EMAIL });
+  const reset =
+    process.argv.includes("--reset") || process.env.RESET_ADMIN_PASSWORD === "true";
+
+  const existing = await User.findOne({ email: ADMIN_EMAIL }).select("+password");
 
   if (existing) {
+    let changed = false;
+
     if (existing.role !== "admin") {
       existing.role = "admin";
-      await existing.save();
+      changed = true;
       console.log(`Existing user ${ADMIN_EMAIL} promoted to admin.`);
+    }
+
+    if (reset) {
+      existing.password = await bcrypt.hash(ADMIN_PASSWORD, 10);
+      changed = true;
+      console.log(`Password for ${ADMIN_EMAIL} reset to the configured ADMIN_PASSWORD.`);
+    }
+
+    if (changed) {
+      await existing.save();
     } else {
       console.log(`Admin ${ADMIN_EMAIL} already exists. Nothing to do.`);
     }
