@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+const baseURL =
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000/api'
+    : 'https://tastetrack-aoim.onrender.com/api');
+
 const axiosClient = axios.create({
-  baseURL: '/api', // Will be proxying to the backend
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -10,7 +16,7 @@ const axiosClient = axios.create({
 // Add a request interceptor to include the JWT token
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('tasteTrack_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

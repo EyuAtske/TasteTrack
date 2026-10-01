@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import mongoose from 'mongoose';
 import User from '../models/user.model';
@@ -6,7 +6,7 @@ import Restaurant from '../models/restaurant.model';
 
 // GET FAVORITES
 export const getFavorites = async (
-    req: Request,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
@@ -37,7 +37,7 @@ export const getFavorites = async (
 
 // ADD FAVORITE
 export const addFavorite = async (
-    req: Request,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {

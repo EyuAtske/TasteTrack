@@ -14,7 +14,8 @@ import {
   Pencil,
   Trash2,
   Shield,
-  MoreVertical,
+  Search,
+  Loader2,
 } from 'lucide-react';
 import { restaurantApi } from '../api/restaurantApi';
 import { reviewApi } from '../api/reviewApi';
@@ -23,6 +24,7 @@ import { useToast } from '../context/ToastContext';
 import RatingStars from '../components/RatingStars';
 import Modal from '../components/Modal';
 import ImageUploadInput from '../components/ImageUploadInput';
+import RestaurantMap from '../components/RestaurantMap';
 
 export default function RestaurantDetails() {
   const { id } = useParams();
@@ -37,7 +39,7 @@ export default function RestaurantDetails() {
 
   // ── Write/Edit Review Modal ──
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [editingReview, setEditingReview] = useState(null); // null = new, object = editing
+  const [editingReview, setEditingReview] = useState(null);
   const [newRating, setNewRating] = useState(5);
   const [newTitle, setNewTitle] = useState('');
   const [newComment, setNewComment] = useState('');
@@ -53,6 +55,7 @@ export default function RestaurantDetails() {
   const [isSavingRestaurant, setIsSavingRestaurant] = useState(false);
   const [removedImages, setRemovedImages] = useState([]); // existing photo URLs marked for removal
   const [editSession, setEditSession] = useState(0); // remounts the photo picker on each open
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   // ── Delete Restaurant Confirmation (Admin) ──
   const [isDeleteRestaurantModalOpen, setIsDeleteRestaurantModalOpen] = useState(false);
@@ -74,17 +77,19 @@ export default function RestaurantDetails() {
         cuisine: rest.cuisine || '',
         priceRange: rest.priceRange || '$$',
         address: rest.address || '',
+        latitude: rest.latitude ?? '',
+        longitude: rest.longitude ?? '',
         openingHours: rest.openingHours || '',
         phone: rest.contact?.phone || '',
         website: rest.contact?.website || '',
       });
 
       const revData = await reviewApi.getReviewsByRestaurant(id);
-      setReviews(revData.reviews || []);
+      setReviews(revData.reviews || revData.data || []);
     } catch (err) {
       console.error(err);
       addToast('Error', 'Failed to load restaurant details.', 'error');
-    } finally {
+    } fontally: {
       setIsLoading(false);
     }
   };
@@ -111,6 +116,31 @@ export default function RestaurantDetails() {
       addToast('Removed from favorites', `${restaurant.name} removed from saved places.`, 'info');
     } else {
       addToast('Saved to favorites!', `${restaurant.name} added to your saved list.`, 'success');
+    }
+  };
+
+  const handleGeocodeAddress = async () => {
+    if (!editRestaurantForm.address?.trim()) return;
+    setIsGeocoding(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(editRestaurantForm.address)}`
+      );
+      const data = await res.json();
+      if (data && data.length > 0) {
+        setEditRestaurantForm((prev) => ({
+          ...prev,
+          latitude: parseFloat(data[0].lat),
+          longitude: parseFloat(data[0].lon),
+        }));
+        addToast('Location found!', `Coordinates updated: (${data[0].lat}, ${data[0].lon})`, 'success');
+      } else {
+        addToast('Geocode Notice', 'Could not locate address automatically. Please enter lat/lng manually.', 'info');
+      }
+    } catch (err) {
+      console.error('Geocoding error:', err);
+    } finally {
+      setIsGeocoding(false);
     }
   };
 
@@ -168,9 +198,11 @@ export default function RestaurantDetails() {
       setNewComment('');
       setNewRating(5);
 
-      // Refresh reviews
+      // Refresh reviews & restaurant details
       const revData = await reviewApi.getReviewsByRestaurant(id);
-      setReviews(revData.reviews || []);
+      setReviews(revData.reviews || revData.data || []);
+      const restData = await restaurantApi.getRestaurantById(id);
+      setRestaurant(restData.restaurant || restData);
     } catch (err) {
       addToast('Error', 'Failed to save review. Please try again.', 'error');
     } finally {
@@ -191,7 +223,9 @@ export default function RestaurantDetails() {
       setIsDeleteReviewModalOpen(false);
       setDeletingReviewId(null);
       const revData = await reviewApi.getReviewsByRestaurant(id);
-      setReviews(revData.reviews || []);
+      setReviews(revData.reviews || revData.data || []);
+      const restData = await restaurantApi.getRestaurantById(id);
+      setRestaurant(restData.restaurant || restData);
     } catch (err) {
       addToast('Error', 'Failed to delete review.', 'error');
     }
@@ -209,6 +243,12 @@ export default function RestaurantDetails() {
       submitData.append('cuisine', editRestaurantForm.cuisine);
       submitData.append('priceRange', editRestaurantForm.priceRange);
       submitData.append('address', editRestaurantForm.address);
+      if (editRestaurantForm.latitude !== undefined && editRestaurantForm.latitude !== '') {
+        submitData.append('latitude', editRestaurantForm.latitude);
+      }
+      if (editRestaurantForm.longitude !== undefined && editRestaurantForm.longitude !== '') {
+        submitData.append('longitude', editRestaurantForm.longitude);
+      }
       submitData.append('openingHours', editRestaurantForm.openingHours);
       submitData.append('phone', editRestaurantForm.phone || '');
       submitData.append('website', editRestaurantForm.website || '');
@@ -274,7 +314,7 @@ export default function RestaurantDetails() {
 
   return (
     <div className="space-y-8 text-[#222222]">
-      {/* Back button */}
+      {/* Back button & Admin Header */}
       <div className="flex items-center justify-between">
         <Link
           to="/restaurants"
@@ -391,6 +431,21 @@ export default function RestaurantDetails() {
             <p className="text-sm text-[#717171] leading-relaxed">{restaurant.description}</p>
           </div>
 
+          {/* Interactive Map */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#DDDDDD] space-y-4">
+            <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-[#FF385C]" /> Location & Map
+            </h2>
+            <p className="text-xs text-[#717171]">{restaurant.address}</p>
+            <RestaurantMap
+              latitude={restaurant.latitude}
+              longitude={restaurant.longitude}
+              name={restaurant.name}
+              address={restaurant.address}
+              height="300px"
+            />
+          </div>
+
           {/* Reviews */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#DDDDDD] space-y-6">
             <div className="flex items-center justify-between">
@@ -410,7 +465,9 @@ export default function RestaurantDetails() {
             {reviews.length > 0 ? (
               <div className="space-y-5 divide-y divide-[#EBEBEB]">
                 {reviews.map((rev) => {
-                  const isOwner = user && (String(rev.user?._id) === String(user._id) || rev.user?._id === user._id);
+                  const revUserId = rev.user?._id || rev.user;
+                  const currentUserId = user?._id || user?.id;
+                  const isOwner = user && String(revUserId) === String(currentUserId);
                   const canModify = isOwner || isAdmin;
 
                   return (
@@ -432,7 +489,6 @@ export default function RestaurantDetails() {
 
                         <div className="flex items-center gap-2">
                           <RatingStars rating={rev.rating} size="xs" />
-                          {/* Edit/Delete actions for review owner or admin */}
                           {canModify && (
                             <div className="flex items-center gap-1.5 ml-2">
                               <button
@@ -657,14 +713,53 @@ export default function RestaurantDetails() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-[#222222] uppercase tracking-wider mb-1">Address</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-[#222222] uppercase tracking-wider">Address</label>
+              <button
+                type="button"
+                onClick={handleGeocodeAddress}
+                disabled={isGeocoding}
+                className="text-[10px] font-semibold text-[#FF385C] hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              >
+                {isGeocoding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                <span>Auto-find coordinates</span>
+              </button>
+            </div>
             <input
               type="text"
               value={editRestaurantForm.address || ''}
               onChange={(e) => setEditRestaurantForm({ ...editRestaurantForm, address: e.target.value })}
+              onBlur={handleGeocodeAddress}
               className="w-full px-3.5 py-2 text-xs bg-[#F7F7F7] border border-[#DDDDDD] rounded-xl outline-none focus:border-[#FF385C]"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-[#222222] uppercase tracking-wider mb-1">Latitude</label>
+              <input
+                type="number"
+                step="any"
+                value={editRestaurantForm.latitude ?? ''}
+                onChange={(e) => setEditRestaurantForm({ ...editRestaurantForm, latitude: e.target.value })}
+                className="w-full px-3.5 py-2 text-xs bg-[#F7F7F7] border border-[#DDDDDD] rounded-xl outline-none focus:border-[#FF385C]"
+                placeholder="e.g. 40.7128"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-[#222222] uppercase tracking-wider mb-1">Longitude</label>
+              <input
+                type="number"
+                step="any"
+                value={editRestaurantForm.longitude ?? ''}
+                onChange={(e) => setEditRestaurantForm({ ...editRestaurantForm, longitude: e.target.value })}
+                className="w-full px-3.5 py-2 text-xs bg-[#F7F7F7] border border-[#DDDDDD] rounded-xl outline-none focus:border-[#FF385C]"
+                placeholder="e.g. -74.0060"
+                required
+              />
+            </div>
           </div>
 
           <div>

@@ -18,7 +18,7 @@ export const getDashboardStats = async (
             totalReviews,
             recentReviews,
             user,
-            userReviewsCount,
+            userReviews,
         ] = await Promise.all([
             Restaurant.countDocuments(),
             User.countDocuments(),
@@ -30,13 +30,12 @@ export const getDashboardStats = async (
                 .populate('user', 'name profileImage')
                 .populate('restaurant', 'name'),
 
-            User.findById(userId).select(
-                'name role favorites'
-            ),
-
-            Review.countDocuments({
-                user: userId,
+            User.findById(userId).populate({
+                path: 'favorites',
+                select: 'name description address category cuisine priceRange images averageRating reviewCount',
             }),
+
+            Review.find({ user: userId }),
         ]);
 
         if (!user) {
@@ -45,6 +44,22 @@ export const getDashboardStats = async (
                 message: 'User not found',
             });
         }
+
+        const userReviewsCount = userReviews.length;
+        const distinctVisitedCount = new Set(
+            userReviews.map((r) => r.restaurant.toString())
+        ).size;
+
+        const sumUserRatings = userReviews.reduce(
+            (acc, r) => acc + (r.rating || 0),
+            0
+        );
+        const avgRatingGiven =
+            userReviewsCount > 0
+                ? Number((sumUserRatings / userReviewsCount).toFixed(1))
+                : 0;
+
+        const favoritesList = user.favorites || [];
 
         const dashboardData = {
             platformStats: {
@@ -55,11 +70,22 @@ export const getDashboardStats = async (
 
             recentActivity: recentReviews,
 
+            stats: {
+                totalFavorites: favoritesList.length,
+                totalReviews: userReviewsCount,
+                totalVisited: distinctVisitedCount,
+                avgRatingGiven,
+            },
+
+            favorites: favoritesList,
+
             userStats: {
                 name: user.name,
                 role: user.role,
-                favoritesCount: user.favorites.length,
+                favoritesCount: favoritesList.length,
                 reviewsCount: userReviewsCount,
+                placesVisitedCount: distinctVisitedCount,
+                avgRatingGiven,
             },
         };
 

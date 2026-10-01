@@ -5,6 +5,10 @@ import { restaurantApi } from './restaurantApi';
 // and favorites come from GET /favorites. This maps both into the shape the
 // Dashboard page uses: { stats, favorites, recentActivity }.
 export const dashboardApi = {
+  /**
+   * GET /api/dashboard  (protected — requires JWT)
+   * Returns { success, data: { platformStats, recentActivity, stats, favorites, userStats } }
+   */
   getDashboardData: async () => {
     try {
       const [dashRes, favRes] = await Promise.all([
