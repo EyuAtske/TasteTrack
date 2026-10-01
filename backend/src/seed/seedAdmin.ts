@@ -12,18 +12,13 @@ const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "admin@tastetrack.com")
   .toLowerCase();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin@12345";
 
-async function seedAdmin() {
-  if (!process.env.MONGO_URI) {
-    throw new Error("Missing required environment variable: MONGO_URI");
-  }
-
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log("MongoDB Connected");
-
+// Creates the default admin if missing. Assumes mongoose is already connected.
+// Safe to call on every start: it never creates duplicates and never changes
+// an existing password.
+export async function ensureAdmin() {
   const existing = await User.findOne({ email: ADMIN_EMAIL });
 
   if (existing) {
-    // Safe to run repeatedly: no duplicate is created.
     if (existing.role !== "admin") {
       existing.role = "admin";
       await existing.save();
@@ -46,9 +41,24 @@ async function seedAdmin() {
   console.log(`Admin created: ${ADMIN_EMAIL}`);
 }
 
-seedAdmin()
-  .catch((err) => {
-    console.error("Seeding failed:", err);
-    process.exitCode = 1;
-  })
-  .finally(() => mongoose.disconnect());
+// Command-line usage:  npm run seed:admin
+async function main() {
+  if (!process.env.MONGO_URI) {
+    throw new Error("Missing required environment variable: MONGO_URI");
+  }
+
+  await mongoose.connect(process.env.MONGO_URI);
+  console.log("MongoDB Connected");
+
+  await ensureAdmin();
+}
+
+// Only run when executed directly, NOT when server.ts imports this file.
+if (require.main === module) {
+  main()
+    .catch((err) => {
+      console.error("Seeding failed:", err);
+      process.exitCode = 1;
+    })
+    .finally(() => mongoose.disconnect());
+}
