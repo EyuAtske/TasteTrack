@@ -7,41 +7,6 @@ import Restaurant from "../models/restaurant.model";
 import User from "../models/user.model";
 import Review from "../models/review.model";
 
-const IMG = {
-  Ethiopian: [
-    "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=1000&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80",
-  ],
-  Italian: [
-    "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1000&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800&auto=format&fit=crop&q=80",
-  ],
-  Japanese: [
-    "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=1000&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=800&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&auto=format&fit=crop&q=80",
-  ],
-  BBQ: [
-    "https://images.unsplash.com/photo-1544025162-d76694265947?w=1000&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=800&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&auto=format&fit=crop&q=80",
-  ],
-  Vegan: [
-    "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1000&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&auto=format&fit=crop&q=80",
-  ],
-  FineDining: [
-    "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=1000&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&auto=format&fit=crop&q=80",
-  ],
-  Cafes: [
-    "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1000&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop&q=80",
-  ],
-};
-
 const DEMO_USERS = [
   {
     name: "Abebe Bikila",
@@ -88,7 +53,7 @@ const DEMO_USERS = [
 ];
 
 const RESTAURANTS = [
-  // ---------- Ethiopian Traditional ----------
+  // 1. Yod Abyssinia
   {
     name: "Yod Abyssinia Cultural Restaurant",
     description:
@@ -97,12 +62,18 @@ const RESTAURANTS = [
     category: "Fine Dining",
     cuisine: "Ethiopian Traditional",
     priceRange: "$$$",
-    images: IMG.Ethiopian,
+    images: [
+      "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1596797882870-8c33deeac224?w=800&auto=format&fit=crop&q=80",
+    ],
     contact: "+251 11 661 2176",
     openingHours: "Mon-Sun 10:00 AM - 11:30 PM",
     latitude: 8.995804,
     longitude: 38.784651,
   },
+
+  // 2. Kategna
   {
     name: "Kategna Ethiopian Restaurant",
     description:
@@ -111,12 +82,18 @@ const RESTAURANTS = [
     category: "Fine Dining",
     cuisine: "Ethiopian Traditional",
     priceRange: "$$",
-    images: IMG.Ethiopian,
+    images: [
+      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=80",
+    ],
     contact: "+251 11 662 7272",
     openingHours: "Mon-Sun 8:00 AM - 11:00 PM",
     latitude: 8.998124,
     longitude: 38.775412,
   },
+
+  // 3. Habesha Cultural
   {
     name: "Habesha Cultural Restaurant",
     description:
@@ -125,12 +102,18 @@ const RESTAURANTS = [
     category: "Fine Dining",
     cuisine: "Ethiopian Traditional",
     priceRange: "$$$",
-    images: IMG.Ethiopian,
+    images: [
+      "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1574484284002-952d92456975?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80",
+    ],
     contact: "+251 11 662 2548",
     openingHours: "Mon-Sun 11:00 AM - 11:00 PM",
     latitude: 9.001245,
     longitude: 38.782104,
   },
+
+  // 4. Fitsum Shiro Bet
   {
     name: "Fitsum Shiro Bet",
     description:
@@ -139,12 +122,18 @@ const RESTAURANTS = [
     category: "Vegan",
     cuisine: "Ethiopian Vegan",
     priceRange: "$",
-    images: IMG.Vegan,
+    images: [
+      "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1547496502-affa22d38842?w=800&auto=format&fit=crop&q=80",
+    ],
     contact: "+251 91 191 0671",
     openingHours: "Mon-Sun 8:00 AM - 9:00 PM",
     latitude: 8.9995488,
     longitude: 38.7862196,
   },
+
+  // 5. Tomoca Coffee
   {
     name: "Tomoca Coffee (Black Gold)",
     description:
@@ -153,14 +142,18 @@ const RESTAURANTS = [
     category: "Cafes",
     cuisine: "Ethiopian Coffee",
     priceRange: "$",
-    images: IMG.Cafes,
+    images: [
+      "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800&auto=format&fit=crop&q=80",
+    ],
     contact: "+251 11 111 2222",
     openingHours: "Mon-Sun 6:30 AM - 8:30 PM",
     latitude: 9.030512,
     longitude: 38.751842,
   },
 
-  // ---------- International & Fusion ----------
+  // 6. Le Basilic Addis
   {
     name: "Le Basilic Addis",
     description:
@@ -169,12 +162,18 @@ const RESTAURANTS = [
     category: "Italian",
     cuisine: "Italian",
     priceRange: "$$",
-    images: IMG.Italian,
+    images: [
+      "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1621996346565-e3d5d6281256?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800&auto=format&fit=crop&q=80",
+    ],
     contact: "+251 90 560 4444",
     openingHours: "Mon-Sun 8:30 AM - 10:00 PM",
     latitude: 8.995234,
     longitude: 38.7674019,
   },
+
+  // 7. Matsuki Japanese Restaurant
   {
     name: "Matsuki Japanese Restaurant",
     description:
@@ -183,12 +182,18 @@ const RESTAURANTS = [
     category: "Japanese",
     cuisine: "Japanese Sushi",
     priceRange: "$$$$",
-    images: IMG.Japanese,
+    images: [
+      "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&auto=format&fit=crop&q=80",
+    ],
     contact: "+251 90 117 1819",
     openingHours: "Tue-Sun 12:00 PM - 11:00 PM",
     latitude: 8.9920451,
     longitude: 38.7669652,
   },
+
+  // 8. Chanoly Carnivore BBQ
   {
     name: "Chanoly Carnivore BBQ",
     description:
@@ -197,12 +202,18 @@ const RESTAURANTS = [
     category: "BBQ",
     cuisine: "Texas BBQ",
     priceRange: "$$$$",
-    images: IMG.BBQ,
+    images: [
+      "https://images.unsplash.com/photo-1544025162-d76694265947?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&auto=format&fit=crop&q=80",
+    ],
     contact: "+251 98 609 1656",
     openingHours: "Mon-Sun 9:00 AM - 11:00 PM",
     latitude: 8.9910009,
     longitude: 38.7788992,
   },
+
+  // 9. The Alchemist Dine & Wine
   {
     name: "The Alchemist Dine & Wine",
     description:
@@ -211,12 +222,18 @@ const RESTAURANTS = [
     category: "Fine Dining",
     cuisine: "Contemporary International",
     priceRange: "$$$$",
-    images: IMG.FineDining,
+    images: [
+      "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&auto=format&fit=crop&q=80",
+    ],
     contact: "+251 98 898 0102",
     openingHours: "Mon-Sun 12:00 PM - 10:30 PM",
     latitude: 8.9919165,
     longitude: 38.779167,
   },
+
+  // 10. YeGesha Specialty Cafe
   {
     name: "YeGesha Specialty Cafe & Roastery",
     description:
@@ -225,7 +242,11 @@ const RESTAURANTS = [
     category: "Cafes",
     cuisine: "Specialty Coffee",
     priceRange: "$$",
-    images: IMG.Cafes,
+    images: [
+      "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1000&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&auto=format&fit=crop&q=80",
+    ],
     contact: "+251 98 412 1212",
     openingHours: "Mon-Sun 7:00 AM - 10:00 PM",
     latitude: 8.9874188,
@@ -353,7 +374,7 @@ const REVIEWS_DATA: Record<string, Array<{ userEmail: string; rating: number; ti
 };
 
 export async function seedAll() {
-  console.log("Seeding demo users, restaurants, and reviews...");
+  console.log("Seeding demo users, unique restaurant photos, and authentic reviews...");
 
   // 1. Seed Demo Users
   const userMap: Record<string, mongoose.Types.ObjectId> = {};
@@ -428,7 +449,7 @@ export async function seedAll() {
     await Restaurant.findByIdAndUpdate(restId, { averageRating: avg });
   }
 
-  console.log("Database successfully seeded with demo data! 🚀");
+  console.log("Database successfully seeded with unique restaurant photos & demo data! 🚀");
 }
 
 export async function autoSeedIfEmpty() {
