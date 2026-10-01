@@ -5,6 +5,8 @@ import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
 import Restaurant from "../models/restaurant.model";
+import Review from "../models/review.model";
+import User from "../models/user.model";
 
 // Real Addis Ababa restaurants (name, location, phone and hours taken from
 // Google Maps). Descriptions are our own wording. Ratings are NOT copied:
@@ -389,24 +391,8 @@ function localImagesFor(name: string): string[] {
   });
 }
 
-async function seedRestaurants() {
-  if (!process.env.MONGO_URI) {
-    throw new Error("Missing required environment variable: MONGO_URI");
-  }
-
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log("MongoDB Connected");
-
-  // --if-empty: used on container start. Seed only when there are no restaurants yet,
-  // so restarts never overwrite changes admins made in the app.
-  if (process.argv.includes("--if-empty")) {
-    const existing = await Restaurant.estimatedDocumentCount();
-    if (existing > 0) {
-      console.log(`Restaurants already present (${existing}). Skipping seed.`);
-      return;
-    }
-  }
-
+// Core seeding logic. Assumes mongoose is already connected.
+export async function runSeed() {
   const removed = await Restaurant.deleteMany({
     name: { $in: OLD_FICTIONAL_NAMES },
   });
@@ -445,9 +431,93 @@ async function seedRestaurants() {
   }
 }
 
-seedRestaurants()
-  .catch((err) => {
-    console.error("Seeding failed:", err);
-    process.exitCode = 1;
-  })
-  .finally(() => mongoose.disconnect());
+// Deletes every restaurant that is NOT in the seed list above, together with its
+// reviews, and removes it from users' favorites (so nothing is left pointing at it).
+export async function pruneExtras() {
+  const keep = restaurants.map((r) => r.name);
+  const extras = await Restaurant.find({ name: { $nin: keep } }).select("_id name");
+
+  if (extras.length === 0) {
+    console.log("No extra restaurants to remove.");
+    return;
+  }
+
+  const ids = extras.map((e) => e._id);
+  const reviews = await Review.deleteMany({ restaurant: { $in: ids } });
+  await User.updateMany({ favorites: { $in: ids } }, { $pull: { favorites: { $in: ids } } });
+  await Restaurant.deleteMany({ _id: { $in: ids } });
+
+  console.log(
+    `Removed ${extras.length} extra restaurants (and ${reviews.deletedCount} reviews): ` +
+      extras.map((e) => e.name).join(", ")
+  );
+}
+
+// Re-creates uploads/seed/* from seed-images/. Hosts with an ephemeral disk (e.g. Render
+// free tier) wipe uploads/ on every deploy, but the database keeps pointing at those files.
+export function syncSeedPhotos() {
+  let copied = 0;
+  for (const r of restaurants) copied += localImagesFor(r.name).length;
+  console.log(`Seed photos synced: ${copied} files in uploads/seed.`);
+}
+
+// Call from server.ts AFTER the database is connected:
+//   await autoSeedOrSync();
+// - always restores the seed photo files
+// - seeds the restaurants only when the collection is empty (never overwrites admin edits)
+// - set FORCE_SEED=true once to re-run the full seed (e.g. after fixing PUBLIC_URL)
+export async function autoSeedOrSync() {
+  try {
+    syncSeedPhotos();
+
+    const force = process.env.FORCE_SEED === "true";
+    const count = await Restaurant.estimatedDocumentCount();
+
+    if (force || count === 0) {
+      console.log(force ? "FORCE_SEED=true: running full seed." : "No restaurants found: seeding.");
+      await runSeed();
+    } else {
+      console.log(`Restaurants already present (${count}). Skipping seed.`);
+    }
+  } catch (err) {
+    // never stop the API from starting because seeding failed
+    console.error("Auto-seed failed:", err);
+  }
+}
+
+// Command-line usage:
+//   npm run seed:restaurants                 seed / refresh the restaurants
+//   npm run seed:restaurants -- --if-empty   seed only an empty database
+//   npm run seed:restaurants -- --prune      also delete restaurants that are not in the seed list
+async function main() {
+  if (!process.env.MONGO_URI) {
+    throw new Error("Missing required environment variable: MONGO_URI");
+  }
+
+  await mongoose.connect(process.env.MONGO_URI);
+  console.log("MongoDB Connected");
+
+  if (process.argv.includes("--if-empty")) {
+    const existing = await Restaurant.estimatedDocumentCount();
+    if (existing > 0) {
+      console.log(`Restaurants already present (${existing}). Skipping seed.`);
+      return;
+    }
+  }
+
+  await runSeed();
+
+  if (process.argv.includes("--prune")) {
+    await pruneExtras();
+  }
+}
+
+// Only run when executed directly, NOT when server.ts imports this file.
+if (require.main === module) {
+  main()
+    .catch((err) => {
+      console.error("Seeding failed:", err);
+      process.exitCode = 1;
+    })
+    .finally(() => mongoose.disconnect());
+}
