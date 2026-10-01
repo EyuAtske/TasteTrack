@@ -445,9 +445,53 @@ async function seedRestaurants() {
   }
 }
 
-seedRestaurants()
-  .catch((err) => {
-    console.error("Seeding failed:", err);
-    process.exitCode = 1;
-  })
-  .finally(() => mongoose.disconnect());
+/**
+ * Called from server.ts after the DB connection is already established.
+ * Performs an upsert-based sync without opening or closing the connection.
+ */
+export async function autoSeedOrSync(): Promise<void> {
+  const removed = await Restaurant.deleteMany({
+    name: { $in: OLD_FICTIONAL_NAMES },
+  });
+  if (removed.deletedCount) {
+    console.log(`Removed ${removed.deletedCount} old restaurants.`);
+  }
+
+  let created = 0;
+  let updated = 0;
+  let withPhotos = 0;
+  const missingPhotos: string[] = [];
+
+  for (const r of restaurants) {
+    const local = localImagesFor(r.name);
+    if (local.length > 0) withPhotos++;
+    else missingPhotos.push(r.name);
+
+    const result = await Restaurant.updateOne(
+      { name: r.name },
+      { $set: { ...r, images: local.length > 0 ? local : [...r.images] } },
+      { upsert: true }
+    );
+
+    if (result.upsertedCount > 0) created++;
+    else updated++;
+  }
+
+  console.log(
+    `Restaurants seeded: ${created} created, ${updated} already existed (refreshed).`
+  );
+  console.log(`${withPhotos}/${restaurants.length} restaurants use your own photos from seed-images/.`);
+  if (missingPhotos.length > 0) {
+    console.log("Using generic category images for: " + missingPhotos.join(", "));
+  }
+}
+
+// Standalone script entry-point (ts-node src/seed/seedRestaurants.ts)
+if (require.main === module) {
+  seedRestaurants()
+    .catch((err) => {
+      console.error("Seeding failed:", err);
+      process.exitCode = 1;
+    })
+    .finally(() => mongoose.disconnect());
+}
