@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "seed:admin": "ts-node-dev --transpile-only src/seed/seedAdmin.ts",
-    "seed:restaurants": "ts-node-dev --transpile-only src/seed/seedRestaurants.ts"
+    "seed:restaurants": "ts-node-dev --transpile-only src/seed/seedRestaurants.ts",
+    "seed:all": "npm run seed:admin && npm run seed:restaurants -- --if-empty"
   },
   "keywords": [],
   "author": "",
