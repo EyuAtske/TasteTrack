@@ -20,6 +20,15 @@ axiosClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // FormData (file uploads) must NOT be sent as JSON. With the default
+    // 'application/json' header, axios converts the FormData to JSON and the
+    // files are lost. Removing the header lets the browser set multipart/form-data.
+    if (config.data instanceof FormData) {
+      if (typeof config.headers.setContentType === 'function') {
+        config.headers.setContentType(undefined);
+      }
+      delete config.headers['Content-Type'];
+    }
     return config;
   },
   (error) => {

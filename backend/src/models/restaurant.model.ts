@@ -9,8 +9,8 @@ export interface IRestaurant extends Document {
     cuisine: string;
     priceRange: string;
     images: string[];
-    contact: string;
-    openingHours: string; // Can be upgraded to an object later if needed
+    contact: { phone?: string; website?: string };
+    openingHours: string;
     averageRating: number;
     latitude: number;
     longitude: number;
@@ -28,13 +28,16 @@ const RestaurantSchema: Schema = new Schema(
         cuisine: { type: String, required: true },
         priceRange: { type: String, enum: ['$', '$$', '$$$', '$$$$'], required: true },
         images: [{ type: String, default: [], }], // Array of image URLs
-        contact: { type: String },
+        contact: {
+            phone: { type: String },
+            website: { type: String },
+        },
         openingHours: { type: String },
         averageRating: { type: Number, default: 0, min: 0, max: 5 },
         latitude: { type: Number, required: true },
         longitude: { type: Number, required: true },
     },
-    { timestamps: true } // Automatically manages createdAt and updatedAt
+    { timestamps: true } 
 );
 
 RestaurantSchema.index({ category: 1 });
