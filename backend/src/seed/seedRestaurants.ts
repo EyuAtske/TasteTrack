@@ -9,9 +9,18 @@ import Review from "../models/review.model";
 
 const DEMO_USERS = [
   {
+    name: "Admin User",
+    email: "admin@tastetrack.com",
+    password: "admin123",
+    role: "admin",
+    bio: "TasteTrack System Administrator.",
+    profileImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+  },
+  {
     name: "Abebe Bikila",
     email: "abebe@tastetrack.com",
     password: "password123",
+    role: "user",
     bio: "Addis food enthusiast and coffee lover.",
     profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
   },
@@ -19,6 +28,7 @@ const DEMO_USERS = [
     name: "Selamawit Haile",
     email: "selam@tastetrack.com",
     password: "password123",
+    role: "user",
     bio: "Traditional Ethiopian cuisine blogger.",
     profileImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
   },
@@ -26,6 +36,7 @@ const DEMO_USERS = [
     name: "Marcus Samuelsson",
     email: "marcus@tastetrack.com",
     password: "password123",
+    role: "user",
     bio: "International chef & gastronomy explorer.",
     profileImage: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
   },
@@ -33,6 +44,7 @@ const DEMO_USERS = [
     name: "Bethlehem Tadesse",
     email: "betty@tastetrack.com",
     password: "password123",
+    role: "user",
     bio: "Cafe hunter & pastry critic in Addis Ababa.",
     profileImage: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80",
   },
@@ -40,6 +52,7 @@ const DEMO_USERS = [
     name: "Dawit Kassa",
     email: "dawit@tastetrack.com",
     password: "password123",
+    role: "user",
     bio: "Barbecue connoisseur & local guide.",
     profileImage: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=200&auto=format&fit=crop&q=80",
   },
@@ -47,6 +60,7 @@ const DEMO_USERS = [
     name: "Helen Berhane",
     email: "helen@tastetrack.com",
     password: "password123",
+    role: "user",
     bio: "Plant-based dining advocate.",
     profileImage: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80",
   },
@@ -374,9 +388,9 @@ const REVIEWS_DATA: Record<string, Array<{ userEmail: string; rating: number; ti
 };
 
 export async function seedAll() {
-  console.log("Seeding demo users, unique restaurant photos, and authentic reviews...");
+  console.log("Upserting/synchronizing demo users, unique restaurant photos, and authentic reviews...");
 
-  // 1. Seed Demo Users
+  // 1. Upsert Demo Users & Admin
   const userMap: Record<string, mongoose.Types.ObjectId> = {};
   for (const u of DEMO_USERS) {
     const hashedPassword = await bcrypt.hash(u.password, 10);
@@ -389,7 +403,7 @@ export async function seedAll() {
           password: hashedPassword,
           bio: u.bio,
           profileImage: u.profileImage,
-          role: "user",
+          role: u.role || "user",
         },
       },
       { upsert: true, returnDocument: 'after' }
@@ -397,7 +411,7 @@ export async function seedAll() {
     if (userDoc) userMap[u.email] = userDoc._id as mongoose.Types.ObjectId;
   }
 
-  // 2. Seed Restaurants
+  // 2. Upsert Restaurants (Updates existing records with new images & details)
   const restMap: Record<string, mongoose.Types.ObjectId> = {};
   for (const r of RESTAURANTS) {
     const restDoc = await Restaurant.findOneAndUpdate(
@@ -408,7 +422,7 @@ export async function seedAll() {
     if (restDoc) restMap[r.name] = restDoc._id as mongoose.Types.ObjectId;
   }
 
-  // 3. Seed Reviews
+  // 3. Upsert Reviews
   for (const [restName, reviews] of Object.entries(REVIEWS_DATA)) {
     const restaurantId = restMap[restName];
     if (!restaurantId) continue;
@@ -449,18 +463,15 @@ export async function seedAll() {
     await Restaurant.findByIdAndUpdate(restId, { averageRating: avg });
   }
 
-  console.log("Database successfully seeded with unique restaurant photos & demo data! 🚀");
+  console.log("Database successfully synchronized with unique restaurant photos & demo data! 🚀");
 }
 
-export async function autoSeedIfEmpty() {
+export async function autoSeedOrSync() {
   try {
-    const count = await Restaurant.countDocuments();
-    if (count === 0) {
-      console.log("Empty database detected on startup. Running auto-seed...");
-      await seedAll();
-    }
+    console.log("Synchronizing database seed records on startup...");
+    await seedAll();
   } catch (err) {
-    console.error("Auto-seed check error:", err);
+    console.error("Auto-seed/sync error:", err);
   }
 }
 
